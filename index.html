@@ -224,7 +224,7 @@ video#out{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px)
   border:1px solid var(--glass-hairline); box-shadow:var(--glass-rim), var(--glass-drop)}
 .statusbar .msg{flex:1 1 auto; min-width:0; font-size:13px; font-weight:600}
 .statusbar .bar{height:5px; border-radius:3px; background:var(--line); overflow:hidden; margin-top:6px}
-.statusbar .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--main));transition:width .18s}
+.statusbar .bar i{display:block;height:100%;width:100%;transform:scaleX(0);transform-origin:left;background:linear-gradient(90deg,var(--gold),var(--main));transition:transform .18s}
 
 /* ---- 도움말 시트 ---- */
 .sheet{position:fixed; inset:0; z-index:60; display:flex; align-items:flex-end; justify-content:center;

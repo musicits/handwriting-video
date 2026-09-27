@@ -333,7 +333,7 @@ $("restart").onclick = () => { S.bitmap = null; S.an = null; S.blob = null; S.fi
 let stTimer = 0;
 function showStatus(msg, frac, isError, note) {
   clearTimeout(stTimer);
-  $("statusbar").hidden = false; $("stMsg").textContent = msg; $("stBar").style.width = (frac * 100) + "%";
+  $("statusbar").hidden = false; $("stMsg").textContent = msg; $("stBar").style.transform = `scaleX(${frac})`;
   $("stBar").parentElement.hidden = !!(isError || note); $("stop").hidden = !!(isError || note);
   if (isError) stTimer = setTimeout(hideStatus, 5000);
 }
