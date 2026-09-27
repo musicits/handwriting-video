@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- music ITs — 손글씨 영상 메이커. 도구 모음 카드와 같은 그림 규칙(검은 판 + 흰 선) -->
+  <rect width="64" height="64" rx="15" fill="#0B0D11"/>
+  <g fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M13 42c4-9 7-13 9-11s-3 9 1 9 6-12 10-11-1 9 3 9 5-6 7-8"/>
+    <path d="M40 22l8-8 4 4-8 8-5 1z"/>
+    <path d="M14 50h36" stroke-opacity=".45"/>
+  </g>
+</svg>

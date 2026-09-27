@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>손글씨 영상 메이커</title>
+<meta name="description" content="손글씨 사진을 넣으면 한 획씩 써지는 영상으로 만드는 무료 도구. 공책·편지지·양피지·칠판 종이와 글 쓰는 소리를 고를 수 있고, 설치 없이 PC와 휴대폰 브라우저에서 바로 씁니다.">
+<link rel="canonical" href="https://tools.musicits.com/handwriting-video/">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<meta name="author" content="쭈뉘의 뮤직잇츠 music ITs">
+<link rel="me" href="https://blog.naver.com/musicits">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication",
+ "name":"손글씨 영상 메이커","url":"https://tools.musicits.com/handwriting-video/",
+ "applicationCategory":"MultimediaApplication","operatingSystem":"Web","inLanguage":"ko","isAccessibleForFree":true,
+ "description":"손글씨 사진을 넣으면 한 획씩 써지는 영상으로 만드는 무료 도구. 공책·편지지·양피지·칠판 종이와 글 쓰는 소리를 고를 수 있고, 설치 없이 PC와 휴대폰 브라우저에서 바로 씁니다.",
+ "author":{"@type":"Person","name":"쭈뉘의 뮤직잇츠 music ITs","url":"https://blog.naver.com/musicits","sameAs":["https://blog.naver.com/musicits","https://github.com/musicits"]},
+ "copyrightYear":2026,"copyrightHolder":{"@type":"Person","name":"쭈뉘의 뮤직잇츠 music ITs","url":"https://blog.naver.com/musicits"}}
+</script>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+/* 재질·글꼴·색은 폰 목업 스튜디오(공개 도구 기준)와 같습니다 — ver. 02 리퀴드 글래스, 퍼플 */
+:root{
+  --main:#7B5CF0; --main-deep:#5A3ED1; --gold:#B79CFF; --cyan:#6FC3FF;
+  --canvas:#ffffff; --surface:#F1F3F7; --surface-soft:#F7F8FA;
+  --line:#E3E6EC; --line-strong:#C7CCD6;
+  --ink:#15181E; --slate:#434955; --steel:#636A77; --stone-solid:#8E95A1;
+  --warn:#C77A1F;
+  --r-sm:8px; --r-md:10px; --r-lg:16px; --r-outer:24px;
+  --glass: saturate(180%) blur(26px);
+  --glass-face: rgba(247,248,250,.74);
+  --glass-hairline: rgba(20,35,60,.10);
+  --glass-rim: inset 0 1px 0 rgba(255,255,255,.92), inset 0 0 0 .5px rgba(20,35,60,.14), 0 0 0 .5px rgba(20,35,60,.10);
+  --glass-sheen: rgba(255,255,255,.55);
+  --glass-drop: 0 24px 48px -28px rgba(20,35,60,.30), 0 2px 8px -4px rgba(20,35,60,.10);
+  --focus: 0 0 0 3px rgba(123,92,240,.32);
+  --sel-bg:#E6DDFF; --sel-fg:#1B1728;
+  color-scheme: light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --main:#A58CFF; --main-deep:#C9B8FF; --gold:#8E6CFF; --cyan:#4FA8E8;
+    --canvas:#161920; --surface:#1D2129; --surface-soft:#0B0D11;
+    --line:#2A2F38; --line-strong:#3E4451;
+    --ink:#ECEEF2; --slate:#BAC0CB; --steel:#9199A6; --stone-solid:#6F7784;
+    --warn:#E8963C;
+    --glass-face: rgba(20,23,29,.74);
+    --glass-hairline: rgba(255,255,255,.10);
+    --glass-rim: inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 .5px rgba(255,255,255,.06), 0 0 0 .5px rgba(0,0,0,.45);
+    --glass-sheen: rgba(255,255,255,.05);
+    --glass-drop: 0 24px 48px -28px rgba(0,0,0,.7), 0 2px 8px -4px rgba(0,0,0,.4);
+    --focus: 0 0 0 3px rgba(165,140,255,.38);
+    --sel-bg:#3A2F66; --sel-fg:#F3EFFF;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --main:#A58CFF; --main-deep:#C9B8FF; --gold:#8E6CFF; --cyan:#4FA8E8;
+  --canvas:#161920; --surface:#1D2129; --surface-soft:#0B0D11;
+  --line:#2A2F38; --line-strong:#3E4451;
+  --ink:#ECEEF2; --slate:#BAC0CB; --steel:#9199A6; --stone-solid:#6F7784;
+  --warn:#E8963C;
+  --glass-face: rgba(20,23,29,.74);
+  --glass-hairline: rgba(255,255,255,.10);
+  --glass-rim: inset 0 1px 0 rgba(255,255,255,.18), inset 0 0 0 .5px rgba(255,255,255,.06), 0 0 0 .5px rgba(0,0,0,.45);
+  --glass-sheen: rgba(255,255,255,.05);
+  --glass-drop: 0 24px 48px -28px rgba(0,0,0,.7), 0 2px 8px -4px rgba(0,0,0,.4);
+  --focus: 0 0 0 3px rgba(165,140,255,.38);
+  --sel-bg:#3A2F66; --sel-fg:#F3EFFF;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+::selection{background:var(--sel-bg);color:var(--sel-fg)}
+:focus-visible{outline:none;box-shadow:var(--focus)}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{
+  margin:0; color:var(--ink); font-size:14px; line-height:1.6;
+  font-family:'Pretendard Variable',Pretendard,'Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased; -webkit-tap-highlight-color:transparent;
+  background:
+    radial-gradient(900px 620px at 6% -8%,color-mix(in srgb,var(--gold) 34%,transparent),transparent 62%),
+    radial-gradient(780px 660px at 100% 12%,color-mix(in srgb,var(--cyan) 26%,transparent),transparent 58%),
+    radial-gradient(700px 520px at 38% 58%,color-mix(in srgb,var(--main) 12%,transparent),transparent 64%),
+    radial-gradient(900px 700px at 60% 114%,color-mix(in srgb,var(--gold) 20%,transparent),transparent 60%),
+    var(--surface-soft);
+  background-attachment:fixed;
+}
+.mono{font-variant-numeric:tabular-nums}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+[hidden]{display:none!important}
+
+/* ---- 머리말 ---- */
+header{
+  display:flex; align-items:center; gap:8px 16px; flex-wrap:wrap;
+  padding:14px 24px; position:sticky; top:0; z-index:30;
+  background:var(--glass-face); -webkit-backdrop-filter:var(--glass); backdrop-filter:var(--glass);
+  border-bottom:1px solid var(--glass-hairline); box-shadow:var(--glass-rim);
+}
+header .logo{height:26px;width:auto;display:block;flex:0 0 auto}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) header .logo{filter:invert(1)} }
+:root[data-theme="dark"] header .logo{filter:invert(1)}
+header h1{margin:0;font-size:16px;font-weight:600;color:var(--slate);line-height:1.3;
+  padding-left:16px;border-left:1px solid var(--line-strong)}
+header p{margin:0;color:var(--steel);font-size:12.5px}
+.helpbtn{
+  margin-left:auto; flex:0 0 auto; width:34px; height:34px; border-radius:50%; padding:0; cursor:pointer;
+  font:inherit; font-size:15px; font-weight:700; color:var(--slate);
+  border:1px solid var(--glass-hairline); box-shadow:var(--glass-rim), 0 1px 3px rgba(50,30,110,.08);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--canvas) 90%,transparent),color-mix(in srgb,var(--canvas) 62%,transparent));
+}
+.helpbtn:hover{background:var(--canvas);color:var(--main-deep)}
+
+/* ---- 단계 표시 ---- */
+.steps{display:flex; gap:6px; padding:14px 20px 0; list-style:none; margin:0; flex-wrap:wrap}
+.steps li{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--steel); font-weight:500}
+.steps li + li::before{content:""; width:22px; height:1px; background:var(--line-strong); margin-right:2px}
+.steps i{font-style:normal; width:22px; height:22px; border-radius:50%; display:grid; place-items:center;
+  font-size:12px; font-weight:700; border:1px solid var(--line-strong); background:color-mix(in srgb,var(--canvas) 70%,transparent)}
+.steps li[aria-current="step"]{color:var(--ink); font-weight:700}
+.steps li[aria-current="step"] i{background:var(--main); color:#fff; border-color:var(--main)}
+.steps li.done i{background:color-mix(in srgb,var(--main) 16%,transparent); border-color:color-mix(in srgb,var(--main) 45%,transparent); color:var(--main-deep)}
+
+/* ---- 유리 카드 ---- */
+.work{display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:16px; padding:14px 20px 20px; align-items:start}
+.stage,.rail{
+  position:relative; isolation:isolate; border-radius:var(--r-outer);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--canvas) 66%,transparent),color-mix(in srgb,var(--canvas) 46%,transparent));
+  -webkit-backdrop-filter:saturate(190%) blur(26px); backdrop-filter:saturate(190%) blur(26px);
+  border:1px solid var(--glass-hairline); border-top-color:var(--glass-sheen);
+  box-shadow:var(--glass-rim), var(--glass-drop);
+}
+.stage::before,.rail::before{content:"";position:absolute;inset:0 0 auto 0;height:120px;border-radius:inherit;
+  z-index:-1;pointer-events:none;background:linear-gradient(180deg,var(--glass-sheen),transparent)}
+.stage{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:24px;
+  min-height:calc(100dvh - var(--hh,60px) - 80px); overflow:hidden}
+.stage.drag::after{content:""; position:absolute; inset:12px; border:2px dashed var(--main); border-radius:14px;
+  background:color-mix(in srgb,var(--main) 10%,transparent); pointer-events:none}
+.rail{padding:4px 0 12px; position:sticky; top:calc(var(--hh,60px) + 16px); max-height:calc(100dvh - var(--hh,60px) - 32px); overflow-y:auto}
+.grp{padding:16px 20px; border-bottom:1px solid var(--glass-hairline)}
+.grp:last-child{border-bottom:0}
+.grp > h2{margin:0 0 10px; font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:space-between; gap:8px}
+.grp > h2 small{font-size:12px; font-weight:500; color:var(--steel)}
+.row{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px}
+.row > label, .row > span{color:var(--slate); flex:0 0 auto}
+
+/* ---- 조작 요소 ---- */
+button,select,input{font:inherit;color:inherit}
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  padding:9px 14px; border:1px solid var(--glass-hairline); border-radius:var(--r-md);
+  font-weight:500; color:var(--ink); cursor:pointer; white-space:nowrap;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--canvas) 90%,transparent),color-mix(in srgb,var(--canvas) 62%,transparent));
+  box-shadow:var(--glass-rim), 0 1px 3px rgba(50,30,110,.08);
+  transition:background .16s ease,border-color .16s ease;
+}
+.btn:hover{background:var(--canvas);border-color:var(--line-strong)}
+.btn.primary{
+  color:#fff; font-weight:600; border-color:var(--main);
+  background:linear-gradient(180deg,color-mix(in srgb,#fff 18%,var(--main)),var(--main) 55%,var(--main-deep));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.38), 0 6px 14px -8px color-mix(in srgb,var(--main) 75%,transparent);
+}
+:root[data-theme="dark"] .btn.primary{color:#15181E}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .btn.primary{color:#15181E} }
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.wide{width:100%}
+.btns{display:flex; gap:8px; margin-top:12px}
+.btns .btn{flex:1 1 0}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{
+  flex:1 1 0; min-width:0; padding:8px 6px; border:1px solid var(--glass-hairline); border-radius:var(--r-md);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--canvas) 90%,transparent),color-mix(in srgb,var(--canvas) 62%,transparent));
+  box-shadow:var(--glass-rim); color:var(--slate); cursor:pointer; font-size:13.5px; white-space:nowrap;
+}
+.seg button[aria-pressed="true"]{
+  color:var(--main-deep); font-weight:600; border-color:color-mix(in srgb,var(--main) 55%,transparent);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--main) 15%,transparent),color-mix(in srgb,var(--main) 5%,transparent));
+}
+input[type=color]{width:38px;height:30px;padding:0;border:1px solid var(--line-strong);border-radius:7px;
+  background:color-mix(in srgb,var(--canvas) 78%,transparent);cursor:pointer}
+input[type=range]{flex:1 1 auto; min-width:0; accent-color:var(--main)}
+input[type=text]{flex:1 1 auto; min-width:0; padding:8px 11px; border:1px solid var(--line-strong); border-radius:var(--r-md);
+  background:color-mix(in srgb,var(--canvas) 78%,transparent); font-size:14px}
+.val{min-width:3.2em; text-align:right; color:var(--ink); font-weight:600}
+.swatches{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sw{border:1px solid var(--glass-hairline); border-radius:10px; background:color-mix(in srgb,var(--canvas) 70%,transparent);
+  box-shadow:var(--glass-rim); padding:6px 5px 7px; cursor:pointer; text-align:center; display:grid; gap:5px; justify-items:center}
+.sw[aria-pressed="true"]{border-color:var(--main);box-shadow:0 0 0 1px var(--main) inset}
+.sw i{display:block;width:100%;height:30px;border-radius:6px;border:1px solid rgba(0,0,0,.14)}
+.sw span{font-size:11px;line-height:1.25;color:var(--slate);word-break:keep-all}
+.inks{grid-template-columns:repeat(5,1fr)}
+.inks .sw i{height:22px;border-radius:50%;width:22px}
+.readout{display:flex;justify-content:space-between;gap:10px;padding:9px 11px;margin-top:10px;
+  border-radius:10px;background:color-mix(in srgb,var(--canvas) 60%,transparent);
+  border:1px solid var(--glass-hairline);box-shadow:var(--glass-rim);font-size:12.5px}
+.readout b{font-weight:600}
+.fname{font-size:12.5px;color:var(--steel);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+
+/* ---- 사진·모서리 ---- */
+.drop{display:grid; place-items:center; gap:10px; width:min(100%,520px); aspect-ratio:4/3; border-radius:20px; cursor:pointer;
+  border:2px dashed color-mix(in srgb,var(--main) 45%,transparent); background:color-mix(in srgb,var(--canvas) 50%,transparent);
+  color:var(--slate); padding:24px; text-align:center}
+.drop:hover{border-color:var(--main); background:color-mix(in srgb,var(--canvas) 70%,transparent)}
+.drop svg{width:44px;height:44px;color:var(--main)}
+.drop b{font-size:16px;color:var(--ink)}
+.drop small{font-size:12.5px;color:var(--steel)}
+.photo{position:relative; max-width:100%; touch-action:none; user-select:none; -webkit-user-select:none; line-height:0}
+.photo canvas{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px) - 150px); width:auto; height:auto; border-radius:6px}
+.photo svg{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible}
+.hdl{position:absolute; width:34px; height:34px; margin:-17px 0 0 -17px; border-radius:50%; padding:0; cursor:grab;
+  border:3px solid #fff; background:color-mix(in srgb,var(--main) 70%,transparent); box-shadow:0 2px 10px rgba(0,0,0,.35); touch-action:none}
+.hdl:active{cursor:grabbing}
+#shot{cursor:pointer}
+#shot,#view{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px) - 140px); width:auto; height:auto;
+  border-radius:10px; box-shadow:0 10px 30px -14px rgba(20,20,40,.45)}
+video#out{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px) - 140px); border-radius:10px; background:#000}
+.busy{position:absolute; inset:0; display:grid; place-items:center; background:color-mix(in srgb,var(--canvas) 45%,transparent);
+  -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px); font-weight:600; color:var(--slate); z-index:3}
+
+/* ---- 상태줄 ---- */
+.statusbar{position:fixed; left:50%; bottom:16px; transform:translateX(-50%); z-index:50; width:min(94%,560px);
+  display:flex; align-items:center; gap:12px; padding:10px 12px 10px 16px; border-radius:14px;
+  background:var(--glass-face); -webkit-backdrop-filter:var(--glass); backdrop-filter:var(--glass);
+  border:1px solid var(--glass-hairline); box-shadow:var(--glass-rim), var(--glass-drop)}
+.statusbar .msg{flex:1 1 auto; min-width:0; font-size:13px; font-weight:600}
+.statusbar .bar{height:5px; border-radius:3px; background:var(--line); overflow:hidden; margin-top:6px}
+.statusbar .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--main));transition:width .18s}
+
+/* ---- 도움말 시트 ---- */
+.sheet{position:fixed; inset:0; z-index:60; display:flex; align-items:flex-end; justify-content:center;
+  background:rgba(18,14,30,.34); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px)}
+.sheetbox{width:min(100%,640px); max-height:88dvh; display:flex; flex-direction:column;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--canvas) 88%,transparent),color-mix(in srgb,var(--canvas) 74%,transparent));
+  -webkit-backdrop-filter:saturate(190%) blur(30px); backdrop-filter:saturate(190%) blur(30px);
+  border:1px solid var(--glass-hairline); box-shadow:var(--glass-rim), var(--glass-drop);
+  border-radius:20px 20px 0 0; padding:14px 16px calc(16px + env(safe-area-inset-bottom))}
+@media (min-width:901px){ .sheet{align-items:center} .sheetbox{border-radius:20px} }
+.sheethead{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sheethead b{font-size:15px;font-weight:700}
+.faq{flex:1 1 auto; min-height:0; overflow-y:auto; margin-top:12px; display:grid; gap:8px; align-content:start}
+.faq details{border:1px solid var(--glass-hairline); border-radius:12px; background:color-mix(in srgb,var(--canvas) 62%,transparent); box-shadow:var(--glass-rim)}
+.faq summary{cursor:pointer; list-style:none; padding:12px 14px; font-weight:700; font-size:14px; display:flex; justify-content:space-between; align-items:center; gap:10px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+"; color:var(--main); font-weight:700; font-size:16px}
+.faq details[open] summary::after{content:"\2212"}
+.faq .ans{padding:0 14px 12px; color:var(--slate); font-size:13.5px; line-height:1.65; word-break:keep-all}
+.faq .ans p{margin:0 0 6px}
+.faq .ans ul{margin:2px 0 4px; padding-left:18px}
+.faq .ans b{color:var(--ink)}
+
+.credit{padding:6px 20px 24px;text-align:center;font-size:11.5px;line-height:1.8;color:var(--steel)}
+.credit p{margin:0}
+.credit a{color:var(--main-deep);font-weight:600;text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--main) 35%,transparent)}
+
+/* ---- 좁은 화면 ---- */
+.dock{display:none}
+@media (max-width:900px){
+  header{padding:10px 14px}
+  header p{font-size:11.5px;flex:1 0 100%;order:3}
+  .helpbtn{order:2;width:32px;height:32px}
+  header .logo{height:19px}
+  header h1{font-size:14.5px;padding-left:10px}
+  .steps{padding:10px 12px 0; gap:4px}
+  .steps li{font-size:12px; gap:5px}
+  .steps li + li::before{width:10px}
+  .work{grid-template-columns:minmax(0,1fr); gap:12px; padding:10px 12px}
+  .stage{min-height:0; padding:14px 12px}
+  .rail{position:static; max-height:none; overflow:visible}
+  .grp{padding:14px 16px}
+  .btn,.seg button{min-height:44px}
+  input[type=text]{font-size:16px; min-height:44px}
+  #shot,#view,video#out{max-height:58dvh}
+  .photo canvas{max-height:58dvh}
+  .rail .primary-act{display:none}
+  .credit{padding:4px 14px calc(88px + env(safe-area-inset-bottom))}
+  .dock{display:flex; gap:8px; position:fixed; left:0; right:0; bottom:0; z-index:40;
+    padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+    background:var(--glass-face); -webkit-backdrop-filter:var(--glass); backdrop-filter:var(--glass);
+    border-top:1px solid var(--glass-hairline); box-shadow:var(--glass-rim)}
+  .dock .btn{flex:1 1 0}
+  .statusbar{bottom:calc(76px + env(safe-area-inset-bottom))}
+}
+@media (max-width:420px){ .steps li span{display:none} .steps li[aria-current="step"] span{display:inline} }
+</style>
+
+<header>
+  <img class="logo" src="logo.png" width="1471" height="353" alt="music ITs">
+  <h1>손글씨 영상 메이커</h1>
+  <p>손글씨 사진을 넣으면 한 획씩 써지는 영상으로 만듭니다</p>
+  <button class="helpbtn" id="helpBtn" type="button" aria-label="도움말" title="도움말">?</button>
+</header>
+
+<ol class="steps" id="steps">
+  <li data-s="1"><i>1</i><span>사진</span></li>
+  <li data-s="2"><i>2</i><span>인식</span></li>
+  <li data-s="3"><i>3</i><span>꾸미기</span></li>
+  <li data-s="4"><i>4</i><span>저장</span></li>
+</ol>
+
+<main class="work">
+  <section class="stage" id="stage">
+    <!-- 1. 사진 -->
+    <button class="drop" id="drop" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16.5V18a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1.5"/><path d="M12 15V4"/><path d="M7.5 8.5 12 4l4.5 4.5"/></svg>
+      <b>손글씨 사진 올리기</b>
+      <small>누르거나 끌어다 놓기 · JPG PNG WEBP</small>
+    </button>
+    <div class="photo" id="photo" hidden>
+      <canvas id="photoImg" aria-label="올린 사진"></canvas>
+      <svg id="quad"><polygon id="poly" fill="rgba(123,92,240,.12)" stroke="#7B5CF0" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>
+      <button class="hdl" type="button" data-k="0" aria-label="왼쪽 위 모서리"></button>
+      <button class="hdl" type="button" data-k="1" aria-label="오른쪽 위 모서리"></button>
+      <button class="hdl" type="button" data-k="2" aria-label="오른쪽 아래 모서리"></button>
+      <button class="hdl" type="button" data-k="3" aria-label="왼쪽 아래 모서리"></button>
+    </div>
+    <!-- 2. 인식 -->
+    <canvas id="shot" hidden></canvas>
+    <!-- 3. 꾸미기 -->
+    <canvas id="view" hidden></canvas>
+    <!-- 4. 저장 -->
+    <video id="out" controls playsinline hidden></video>
+    <div class="busy" id="busy" hidden></div>
+  </section>
+
+  <aside class="rail" id="rail">
+    <!-- 1. 사진 -->
+    <div data-step="1">
+      <div class="grp">
+        <h2>사진</h2>
+        <div class="row" id="fileRow" hidden><span class="fname" id="fname"></span><button class="btn" id="repick" type="button">바꾸기</button></div>
+        <button class="btn wide" id="pick" type="button">사진 고르기</button>
+      </div>
+      <div class="grp" id="cornerGrp" hidden>
+        <h2>종이 영역</h2>
+        <div class="seg">
+          <button type="button" id="cAll">사진 전체</button>
+          <button type="button" id="cInset">안쪽으로</button>
+        </div>
+        <div class="btns primary-act"><button class="btn primary" id="go2" type="button">다음</button></div>
+      </div>
+    </div>
+    <!-- 2. 인식 -->
+    <div data-step="2" hidden>
+      <div class="grp">
+        <h2>인식</h2>
+        <div class="row"><label for="sens">글씨 감도</label><input type="range" id="sens" min="0" max="100" step="5"><b class="val mono" id="sensV"></b></div>
+        <div class="row"><span>공책 줄</span><div class="seg" id="ruleSeg" style="flex:1"><button type="button" data-v="자동">자동</button><button type="button" data-v="없음">없음</button></div></div>
+        <div class="row"><span>종이 밖</span><div class="seg" id="outSeg" style="flex:1"><button type="button" data-v="빼기">빼기</button><button type="button" data-v="넣기">넣기</button></div></div>
+        <div class="readout"><span>찾은 글줄</span><b class="mono" id="lineCount">—</b></div>
+        <div class="readout"><span>공책 줄</span><b id="ruleFound">—</b></div>
+        <div class="row" id="fixRow" hidden><span>손으로 고침 <b class="mono" id="fixCount"></b></span><button class="btn" id="fixUndo" type="button">하나 되돌리기</button></div>
+      </div>
+      <div class="grp">
+        <div class="btns"><button class="btn" id="back1" type="button">이전</button><button class="btn primary primary-act" id="go3" type="button">다음</button></div>
+      </div>
+    </div>
+    <!-- 3. 꾸미기 -->
+    <div data-step="3" hidden>
+      <div class="grp">
+        <h2>종이</h2>
+        <div class="swatches" id="papers"></div>
+      </div>
+      <div class="grp" id="inkGrp">
+        <h2>잉크</h2>
+        <div class="swatches inks" id="inks"></div>
+      </div>
+      <div class="grp">
+        <h2>배경</h2>
+        <div class="seg" id="bgSeg"><button type="button" data-v="단색">단색</button><button type="button" data-v="사진">사진 흐리게</button><button type="button" data-v="이미지">이미지</button></div>
+        <div class="row" id="bgColorRow"><label for="bgColor">색</label><input type="color" id="bgColor"></div>
+        <div class="row" id="bgImgRow" hidden><span class="fname" id="bgName">이미지 없음</span><button class="btn" id="bgPick" type="button">고르기</button></div>
+      </div>
+      <div class="grp">
+        <h2>화면</h2>
+        <div class="seg" id="ratioSeg"><button type="button" data-v="9:16">9:16</button><button type="button" data-v="4:5">4:5</button><button type="button" data-v="1:1">1:1</button><button type="button" data-v="종이">종이 비율</button></div>
+        <div class="row"><label for="size">종이 크기</label><input type="range" id="size" min="60" max="100" step="2"><b class="val mono" id="sizeV"></b></div>
+      </div>
+      <div class="grp">
+        <h2>속도 <small class="mono" id="lenV"></small></h2>
+        <div class="seg" id="speedSeg"><button type="button" data-v="느리게">느리게</button><button type="button" data-v="보통">보통</button><button type="button" data-v="빠르게">빠르게</button></div>
+        <div class="row"><span>끝 멈춤</span><div class="seg" id="holdSeg" style="flex:1"><button type="button" data-v="1">1초</button><button type="button" data-v="2.5">2.5초</button><button type="button" data-v="4">4초</button></div></div>
+      </div>
+      <div class="grp">
+        <h2>서명</h2>
+        <div class="seg" id="signSeg"><button type="button" data-v="0">끄기</button><button type="button" data-v="1">켜기</button></div>
+        <div class="row" id="signRow"><label for="signText">이름</label><input type="text" id="signText" maxlength="40" autocomplete="off" spellcheck="false"></div>
+      </div>
+      <div class="grp">
+        <h2>소리</h2>
+        <div class="row"><span class="fname" id="sndName">소리 파일 없음</span><button class="btn" id="sndPick" type="button">녹음·영상</button></div>
+        <div class="seg" id="sndSeg" hidden style="margin-top:10px"><button type="button" data-v="0">끄기</button><button type="button" data-v="1">켜기</button></div>
+        <div class="row" id="volRow" hidden><label for="vol">음량</label><input type="range" id="vol" min="10" max="100" step="5"><b class="val mono" id="volV"></b></div>
+      </div>
+      <div class="grp">
+        <div class="btns"><button class="btn" id="back2" type="button">이전</button><button class="btn" id="play" type="button">미리 재생</button></div>
+        <button class="btn primary wide primary-act" id="make" type="button" style="margin-top:8px">영상 만들기</button>
+      </div>
+    </div>
+    <!-- 4. 저장 -->
+    <div data-step="4" hidden>
+      <div class="grp">
+        <h2>완성</h2>
+        <div class="readout"><span>크기</span><b class="mono" id="outDim">—</b></div>
+        <div class="readout"><span>길이</span><b class="mono" id="outLen">—</b></div>
+        <div class="readout"><span>용량</span><b class="mono" id="outSize">—</b></div>
+        <button class="btn primary wide primary-act" id="save" type="button" style="margin-top:12px">MP4 저장</button>
+        <div class="btns"><button class="btn" id="back3" type="button">꾸미기로</button><button class="btn" id="restart" type="button">새 사진</button></div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<footer class="credit">
+  <p>Crafted by <a href="https://blog.naver.com/musicits" target="_blank" rel="author noopener">쭈뉘의 뮤직잇츠 music ITs</a></p>
+  <p>© 2026 music ITs. All rights reserved.</p>
+</footer>
+
+<div class="dock" id="dock"><button class="btn primary" id="dockBtn" type="button">다음</button></div>
+
+<div class="statusbar" id="statusbar" hidden>
+  <div class="msg"><span id="stMsg"></span><div class="bar"><i id="stBar"></i></div></div>
+  <button class="btn" id="stop" type="button">멈추기</button>
+</div>
+
+<input type="file" id="fileIn" accept="image/*" hidden>
+<input type="file" id="bgIn" accept="image/*" hidden>
+<input type="file" id="sndIn" accept="audio/*,video/*,.m4a,.mp3,.wav,.aac,.ogg,.mp4,.mov" hidden>
+
+<div class="sheet" id="help" hidden>
+  <div class="sheetbox" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="sheethead"><b id="helpTitle">도움말</b><button class="btn" id="helpClose" type="button">닫기</button></div>
+    <div class="faq">
+      <details open>
+        <summary>사용 순서</summary>
+        <div class="ans">
+          <p><b>1. 사진</b> — [사진 고르기]를 누르거나 사진을 끌어다 놓습니다. 보라색 점 네 개를 종이 네 모서리로 옮기고 [다음].</p>
+          <p><b>2. 인식</b> — 찾은 글씨가 줄마다 주황·파랑으로 번갈아 칠해집니다. 한 문장이 한 색이면 잘 된 것입니다.</p>
+          <ul>
+            <li>글씨가 빠지면 <b>글씨 감도</b>를 올리고, 얼룩이 잡히면 내립니다.</li>
+            <li>다른 줄 색으로 칠해진 조각이 있으면 <b>그 조각을 누르고</b>(보라색 상자) → <b>원래 문장의 글씨를 누르면</b> 그 줄로 옮겨집니다. [하나 되돌리기]로 취소합니다.</li>
+          </ul>
+          <p><b>3. 꾸미기</b> — 종이(12가지)·잉크 색·배경·화면 비율·속도·서명·소리를 고릅니다. [미리 재생]으로 확인한 뒤 [영상 만들기].</p>
+          <p><b>4. 저장</b> — 다 만들어지면 MP4 가 바로 내려받아집니다(다운로드 폴더). 다시 받으려면 [MP4 저장].</p>
+        </div>
+      </details>
+      <details>
+        <summary>어떤 사진이 잘 되나요?</summary>
+        <div class="ans">
+          <p><b>위에서 똑바로</b>, <b>그늘 없이 밝게</b> 찍은 사진이 가장 깔끔합니다. 볼펜·사인펜처럼 진한 글씨가 잘 잡히고, 흐린 연필 글씨는 감도를 올려야 합니다.</p>
+          <p>인스타그램 같은 화면을 캡처해도 되지만, 원본 사진이 있으면 글씨가 훨씬 선명합니다.</p>
+        </div>
+      </details>
+      <details>
+        <summary>종이 영역은 어떻게 맞추나요?</summary>
+        <div class="ans"><p>사진 위 보라색 점 네 개를 종이 네 모서리로 끌어다 놓으세요. 비스듬히 찍힌 사진도 반듯하게 펴집니다. 글씨 바깥의 책상·손가락이 들어가지 않게 조금 안쪽으로 잡는 편이 좋습니다.</p></div>
+      </details>
+      <details>
+        <summary>인식 화면의 주황·파랑은 뭔가요?</summary>
+        <div class="ans">
+          <p>찾은 글씨입니다. <b>글줄마다 주황과 파랑을 번갈아</b> 칠해서 줄이 제대로 나뉘었는지 볼 수 있습니다. 이 줄 순서대로, 줄 안에서는 왼쪽부터 써 나갑니다.</p>
+          <ul>
+            <li>글씨가 군데군데 빠지면 <b>글씨 감도</b>를 올리세요.</li>
+            <li>종이 얼룩·그림자까지 칠해지면 감도를 내리세요.</li>
+            <li>줄 없는 종이인데 글씨의 가로획이 지워지면 <b>공책 줄: 없음</b>을 고르세요.</li>
+          </ul>
+        </div>
+      </details>
+      <details>
+        <summary>종이 밖: 빼기·넣기는 뭔가요?</summary>
+        <div class="ans"><p>인스타그램 화면을 캡처하면 종이 위아래에 프로필 이름·좋아요 줄 같은 화면 글씨가 함께 들어옵니다. <b>빼기</b>(기본)는 바탕 밝기가 종이와 다른 줄을 종이 밖으로 보고 영상에서 뺍니다. 그런 줄도 쓰이게 하려면 <b>넣기</b>를 고르세요.</p></div>
+      </details>
+      <details>
+        <summary>쓰는 순서가 실제와 조금 달라요</summary>
+        <div class="ans"><p>사진만으로는 실제 획순을 알 수 없어서 선 모양을 보고 추정합니다. 줄 → 글자 → 위·왼쪽 순서로 쓰고, 이어 쓴 글자는 잉크가 번지듯 함께 채워집니다. 보통 속도로 보면 자연스럽지만 멈춰 보면 어색한 곳이 있을 수 있습니다.</p></div>
+      </details>
+      <details>
+        <summary>종이 템플릿은 어떻게 바뀌나요?</summary>
+        <div class="ans"><p><b>원본 사진</b>은 찍은 종이를 그대로 씁니다. 나머지는 사진에서 <b>잉크만 뽑아</b> 새 종이에 옮겨 얹습니다. 줄공책·편지지 줄은 글줄 간격에 맞춰 그려집니다. 템플릿에서는 잉크 색도 바꿀 수 있고, 칠판은 분필 결이 들어갑니다.</p></div>
+      </details>
+      <details>
+        <summary>서명은 어디에 들어가나요?</summary>
+        <div class="ans"><p>글씨를 다 쓴 뒤 <b>종이 오른쪽 아래</b>에 이름이 천천히 나타납니다. 칠판처럼 어두운 종이에서는 밝은 글자로, 밝은 종이에서는 어두운 글자로 바뀝니다. 이름은 [서명] 칸에서 바꾸고, 필요 없으면 끄기를 누르세요.</p></div>
+      </details>
+      <details>
+        <summary>글 쓰는 소리는 어떻게 넣나요?</summary>
+        <div class="ans">
+          <p>[소리] 에서 녹음 파일(MP3·M4A·WAV)이나 <b>동영상(MP4·MOV)</b>을 고르세요. 동영상은 소리만 뽑아 씁니다. 파일에서 <b>소리가 나는 부분만 골라</b> 글씨가 써지는 순간에만 이어 붙이고, 글자 사이에서는 조용해집니다.</p>
+          <p>실제로 글씨를 쓰는 모습을 찍은 동영상이 있으면 그 영상을 그대로 올리면 됩니다. 연필·펜으로 종이에 10~20초 끄적이는 소리를 휴대폰으로 직접 녹음해도 되고, 이렇게 하면 가장 자연스럽고 저작권 걱정도 없습니다. 소리 파일은 영상을 만들 때만 쓰고 어디에도 올리지 않습니다.</p>
+        </div>
+      </details>
+      <details>
+        <summary>어떤 브라우저에서 되나요?</summary>
+        <div class="ans"><p>윈도우 <b>엣지</b>·<b>크롬</b> 최신 버전을 권합니다. 설치할 것은 없습니다. 영상 저장에 브라우저의 동영상 인코더(WebCodecs)를 쓰기 때문에 오래된 브라우저에서는 [영상 만들기]가 안 될 수 있습니다.</p></div>
+      </details>
+      <details>
+        <summary>사진이 어디로 올라가나요?</summary>
+        <div class="ans"><p>아니요. 인식부터 영상 만들기까지 전부 <b>내 컴퓨터 브라우저 안에서</b> 끝납니다. 사진·소리·영상 모두 서버로 보내지 않습니다.</p></div>
+      </details>
+      <details>
+        <summary>아이폰 사진(HEIC)이 안 열려요</summary>
+        <div class="ans"><p>크롬·엣지는 HEIC 를 읽지 못합니다. 사진을 JPG 로 바꿔 올리거나, 아이폰 [설정 → 카메라 → 포맷 → 높은 호환성]으로 찍으면 JPG 로 저장됩니다.</p></div>
+      </details>
+      <details>
+        <summary>남의 글씨나 시를 써도 되나요?</summary>
+        <div class="ans"><p>개인 연습은 괜찮지만, 공개로 올릴 때는 글씨 주인과 글(시·가사 등) 저작권자의 허락이 필요할 수 있습니다. 직접 쓴 글씨가 가장 안전합니다.</p></div>
+      </details>
+    </div>
+  </div>
+</div>
+
+<script src="lib/mp4-muxer.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</html>
