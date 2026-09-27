@@ -883,19 +883,30 @@ class Player {
     idx.sort((a, b) => T[a] - T[b]);
     this.idx = Int32Array.from(idx); this.Ts = Float32Array.from(idx, i => T[i]);
     this.soft = 4 / tl.V; this.T = T;
-    // 서명: 다 쓴 뒤 종이 오른쪽 아래에 나타난다
+    // 서명: 다 쓴 뒤 고른 자리에 나타난다
     const txt = opt.sign && (opt.signText || "").trim();
     this.sign = null;
     if (txt) {
       const fs = Math.max(18, Math.round(L.dw * .032)), pad = Math.round(L.dw * .06);
       this.g.font = `600 ${fs}px 'Pretendard Variable',Pretendard,'Malgun Gothic',sans-serif`;
-      const tw = Math.ceil(this.g.measureText(txt).width);
-      const rx = L.dw - pad - tw - 4, ry = L.dh - pad - fs - 6, rw = tw + 8, rh = fs + 12;
-      let lum = 0, n = 0;                            // 그 자리 종이 밝기로 글자색을 정한다
-      for (let y = Math.max(0, ry); y < Math.min(L.dh, ry + rh); y += 3) for (let x = Math.max(0, rx); x < Math.min(L.dw, rx + rw); x += 3) {
-        const o = (y * L.dw + x) * 4; lum += .3 * this.top[o] + .59 * this.top[o + 1] + .11 * this.top[o + 2]; n++;
+      const tw = Math.ceil(this.g.measureText(txt).width), rw = tw + 8, rh = fs + 12;
+      const pos = opt.signPos || "오른쪽 아래";
+      let cx, cy;                                  // 캔버스 좌표
+      if (pos === "왼쪽 아래") { cx = L.px + pad - 4; cy = L.py + L.dh - pad - rh; }
+      else if (pos === "가운데 아래") { cx = L.px + (L.dw - rw) / 2; cy = L.py + L.dh - pad - rh; }
+      else if (pos === "종이 밖 아래") { cx = L.px + (L.dw - rw) / 2; cy = Math.min(L.CH - rh - 8, L.py + L.dh + Math.round(fs * 1.2)); }
+      else { cx = L.px + L.dw - pad - rw; cy = L.py + L.dh - pad - rh; }
+      cx = Math.round(cx); cy = Math.round(cy);
+      const inside = pos !== "종이 밖 아래";
+      let lum = 0, n = 0;                          // 그 자리 밝기로 글자색을 정한다
+      const bgd = inside ? null : L.bg.getContext("2d").getImageData(cx, cy, rw, rh).data;
+      for (let y = 0; y < rh; y += 3) for (let x = 0; x < rw; x += 3) {
+        let o, d;
+        if (inside) { const yy = cy - L.py + y, xx = cx - L.px + x; if (yy < 0 || xx < 0 || yy >= L.dh || xx >= L.dw) continue; o = (yy * L.dw + xx) * 4; d = this.top; }
+        else { o = (y * rw + x) * 4; d = bgd; }
+        lum += .3 * d[o] + .59 * d[o + 1] + .11 * d[o + 2]; n++;
       }
-      this.sign = { txt, fs, rx: Math.max(0, rx), ry: Math.max(0, ry), rw, rh, col: (n && lum / n < 110) ? "236,234,226" : "40,40,46", t0: tl.end + .15 };
+      this.sign = { txt, fs, cx, cy, rw, rh, inside, col: (n && lum / n < 110) ? "236,234,226" : "40,40,46", t0: tl.end + .15 };
     }
     this.reset();
   }
@@ -926,10 +937,11 @@ class Player {
     const sg = this.sign;
     if (sg && t >= sg.t0) {
       const a = Math.min(1, (t - sg.t0) / .7) * .78, g = this.g;
-      g.putImageData(this.img, L.px, L.py, sg.rx, sg.ry, sg.rw, sg.rh);      // 밑바탕을 되살린 뒤 겹쳐 그린다
+      if (sg.inside) g.putImageData(this.img, L.px, L.py, sg.cx - L.px, sg.cy - L.py, sg.rw, sg.rh);   // 밑바탕을 되살린 뒤 겹쳐 그린다
+      else g.drawImage(L.bg, sg.cx, sg.cy, sg.rw, sg.rh, sg.cx, sg.cy, sg.rw, sg.rh);
       g.save(); g.font = `600 ${sg.fs}px 'Pretendard Variable',Pretendard,'Malgun Gothic',sans-serif`;
-      g.textAlign = "right"; g.textBaseline = "bottom"; g.fillStyle = `rgba(${sg.col},${a})`;
-      g.fillText(sg.txt, L.px + sg.rx + sg.rw - 4, L.py + sg.ry + sg.rh - 4); g.restore();
+      g.textAlign = "center"; g.textBaseline = "middle"; g.fillStyle = `rgba(${sg.col},${a})`;
+      g.fillText(sg.txt, sg.cx + sg.rw / 2, sg.cy + sg.rh / 2 + 1); g.restore();
     }
     this.t = t;
   }

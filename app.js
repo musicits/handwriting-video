@@ -4,7 +4,7 @@ const $ = id => document.getElementById(id);
 const tick = () => new Promise(r => setTimeout(r, 30));
 const isTouch = () => matchMedia("(hover:none) and (pointer:coarse)").matches;
 
-const DEF = { paper: "원본", ink: "원본", bg: "단색", bgColor: "#e4e0da", ratio: "9:16", size: 92, speed: "보통", hold: 2.5, soundOn: false, vol: 80, sens: 50, rule: "자동", outside: "빼기", sign: true, signText: "poeticinsik" };
+const DEF = { paper: "원본", ink: "원본", bg: "단색", bgColor: "#e4e0da", ratio: "9:16", size: 92, speed: "보통", hold: 2.5, soundOn: false, vol: 80, sens: 50, rule: "자동", outside: "빼기", sign: true, signText: "poeticinsik", signPos: "오른쪽 아래" };
 const S = { step: 1, bitmap: null, name: "", corners: null, paper: null, paperKey: "", an: null, surf: null, surfKey: "",
   bgBitmap: null, fixes: [], sel: -1, sound: null, soundName: "", player: null, blob: null, stop: false, playing: false, busy: false };
 let opt = { ...DEF };
@@ -204,18 +204,19 @@ function buildUI3() {
   }
   $("bgColorRow").hidden = opt.bg !== "단색"; $("bgImgRow").hidden = opt.bg !== "이미지";
   $("bgColor").value = opt.bgColor;
-  $("signRow").hidden = !opt.sign; if (document.activeElement !== $("signText")) $("signText").value = opt.signText;
+  $("signRow").hidden = !opt.sign; $("signPosSeg").hidden = !opt.sign; if (document.activeElement !== $("signText")) $("signText").value = opt.signText;
   $("size").value = opt.size; $("sizeV").textContent = opt.size + "%";
   $("vol").value = opt.vol; $("volV").textContent = opt.vol;
   $("sndSeg").hidden = !S.sound; $("volRow").hidden = !(S.sound && opt.soundOn);
   $("sndName").textContent = S.sound ? S.soundName : "소리 파일 없음";
-  ["bgSeg", "ratioSeg", "speedSeg", "holdSeg", "sndSeg", "signSeg"].forEach(id => $(id)._paint && $(id)._paint());
+  ["bgSeg", "ratioSeg", "speedSeg", "holdSeg", "sndSeg", "signSeg", "signPosSeg"].forEach(id => $(id)._paint && $(id)._paint());
 }
 segBind("bgSeg", () => opt.bg, v => { opt.bg = v; saveOpt(); buildUI3(); if (v === "이미지" && !S.bgBitmap) $("bgIn").click(); else preview(); });
 segBind("ratioSeg", () => opt.ratio, v => { opt.ratio = v; saveOpt(); preview(); });
 segBind("speedSeg", () => opt.speed, v => { opt.speed = v; saveOpt(); preview(); });
 segBind("holdSeg", () => opt.hold, v => { opt.hold = +v; saveOpt(); preview(); });
 segBind("signSeg", () => opt.sign ? "1" : "0", v => { opt.sign = v === "1"; saveOpt(); buildUI3(); preview(); });
+segBind("signPosSeg", () => opt.signPos, v => { opt.signPos = v; saveOpt(); preview(); });
 $("signText").oninput = () => { opt.signText = $("signText").value; saveOpt(); preview(); };
 segBind("sndSeg", () => opt.soundOn ? "1" : "0", v => { opt.soundOn = v === "1"; saveOpt(); buildUI3(); });
 $("bgColor").oninput = () => { opt.bgColor = $("bgColor").value; saveOpt(); preview(); };
