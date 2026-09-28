@@ -285,7 +285,7 @@ function buildOrder(keep, lineOf, info) {
 }
 
 /* ───────────── 분석 ───────────── */
-async function analyze(paper, sens = 50, ruleMode = "자동", say = () => {}, keepOutside = false) {
+async function analyze(paper, sens = 50, ruleMode = "자동", say = () => {}, keepOutside = false, force = []) {
   const { rgba, W: w, H: h } = paper, N = w * h;
   const gray = new Float32Array(N);
   for (let i = 0; i < N; i++) gray[i] = (rgba[i * 4] + rgba[i * 4 + 1] + rgba[i * 4 + 2]) / 3;
@@ -296,6 +296,12 @@ async function analyze(paper, sens = 50, ruleMode = "자동", say = () => {}, ke
   const thr = Math.max(15, otsu(vals) * (1.5 - sens / 100));
   let core = new Uint8Array(N);
   for (let i = 0; i < N; i++) core[i] = dark[i] > thr;
+  // 직접 잡은 영역: 기준을 낮춰 흐린 획까지 잉크로 본다
+  const lowT = Math.max(10, thr * .45);
+  for (const [x0, y0, x1, y1] of force) {
+    for (let y = Math.max(0, Math.floor(y0)); y <= Math.min(h - 1, Math.ceil(y1)); y++)
+      for (let x = Math.max(0, Math.floor(x0)); x <= Math.min(w - 1, Math.ceil(x1)); x++) if (dark[y * w + x] > lowT) core[y * w + x] = 1;
+  }
 
   say("공책 줄 찾는 중"); await tick();
   const rule = ruleMode === "없음" ? null : findRules(dark, w, h, thr);
@@ -387,9 +393,11 @@ async function analyze(paper, sens = 50, ruleMode = "자동", say = () => {}, ke
     for (const i of p) { const y = i / w | 0, x = i - y * w; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; sy += y; }
     return { x0, x1, y0, y1, cy: sy / p.length, n: p.length };
   });
+  const forced = id => { const f = info[id], cx = (f.x0 + f.x1) / 2; return force.some(([x0, y0, x1, y1]) => cx >= x0 && cx <= x1 && f.cy >= y0 && f.cy <= y1); };
   const drop = (id) => {
     const p = comps[id], f = info[id];
     if (p.length < 4) return true;
+    if (forced(id)) return false;                                  // 직접 잡은 영역 안은 빼지 않는다
     if (R && f.y1 - f.y0 <= 14 && (f.x1 - f.x0 > 50 || f.y1 - f.y0 <= 6)) {   // 공책 줄 찌꺼기
       const ds = [];
       for (let k = 0; k < p.length; k += 3) {
@@ -419,7 +427,7 @@ async function analyze(paper, sens = 50, ruleMode = "자동", say = () => {}, ke
       for (let k = 0; k < v.length; k += 2) all.push(v[k]);
     }
     all.sort((x, y) => x - y); const m0 = all[all.length >> 1];
-    const out = keep.filter(id => Math.abs(mb.get(id) - m0) > 30);
+    const out = keep.filter(id => Math.abs(mb.get(id) - m0) > 30 && !forced(id));
     if (out.length < keep.length / 2) {
       for (const id of out) for (const i of comps[id]) lab[i] = -1;
       const o = new Set(out); keep = keep.filter(id => !o.has(id));
@@ -486,7 +494,7 @@ async function analyze(paper, sens = 50, ruleMode = "자동", say = () => {}, ke
 
   // 획 안에서: 왼쪽 위 끝점부터 잉크를 따라 퍼지는 거리(다익스트라)
   say("쓰는 순서 계산 중"); await tick();
-  const dist = new Float32Array(N).fill(Infinity), lens = new Map();
+  const dist = new Float32Array(N).fill(Infinity), lens = new Map(), areas = new Map();
   const hk = new Float32Array(N * 2 + 16), hv = new Int32Array(N * 2 + 16);
   for (const id of keep) {
     const p = comps[id]; let s0 = p[0], sb = Infinity;
@@ -496,9 +504,9 @@ async function analyze(paper, sens = 50, ruleMode = "자동", say = () => {}, ke
     const pop = () => { const k = hk[0], v = hv[0]; n--; hk[0] = hk[n]; hv[0] = hv[n]; let c = 0;
       for (;;) { const l = 2 * c + 1, r = l + 1; let m = c; if (l < n && hk[l] < hk[m]) m = l; if (r < n && hk[r] < hk[m]) m = r; if (m === c) break;
         [hk[m], hk[c]] = [hk[c], hk[m]]; [hv[m], hv[c]] = [hv[c], hv[m]]; c = m; } return [k, v]; };
-    dist[s0] = 0; push(0, s0); let far = 0;
+    dist[s0] = 0; push(0, s0); let far = 0, cnt = 0;
     while (n) {
-      const [dd, i] = pop(); if (dd > dist[i]) continue; if (dd > far) far = dd;
+      const [dd, i] = pop(); if (dd > dist[i]) continue; if (dd > far) far = dd; cnt++;
       const y = i / w | 0, x = i - y * w;
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
         if (!dy && !dx) continue;
@@ -508,7 +516,7 @@ async function analyze(paper, sens = 50, ruleMode = "자동", say = () => {}, ke
         if (nd < dist[j]) { dist[j] = nd; push(nd, j); }
       }
     }
-    lens.set(id, far + 1);
+    lens.set(id, far + 1); areas.set(id, cnt);
   }
 
   // 잉크 진하기와 색(템플릿에 옮겨 얹을 때)
@@ -522,7 +530,7 @@ async function analyze(paper, sens = 50, ruleMode = "자동", say = () => {}, ke
 
   say("빈 종이 만드는 중"); await tick();
   const blank = makeBlank(rgba, gray, D, R, w, h, Pd);
-  const an = { W: w, H: h, rgba, blank, lab, dist, lens, order, inkA, inkColor, lineYs, pitch: P, ruled: !!R, keep, lineOf, info };
+  const an = { W: w, H: h, rgba, blank, lab, dist, lens, areas, order, inkA, inkColor, lineYs, pitch: P, ruled: !!R, keep, lineOf, info };
   an.lines = new Set(order.map(o => o[0])).size;
   return an;
 }
@@ -803,7 +811,8 @@ function timeline(an, speed = "보통") {
   for (const [L, cs] of an.order) {
     cs.forEach((c, j) => {
       if (seq.length) t += (j ? .05 : (L !== prev ? .5 : .14)) * gk;
-      const du = an.lens.get(c) / V; seq.push([c, t, du]); t += du;
+      // 잉크를 따라 퍼지는 길이와 잉크 양(넓이 ÷ 획 굵기 10px) 중 큰 쪽 — 뭉친 획이 한순간에 튀어나오지 않게
+      const du = Math.max(an.lens.get(c), (an.areas ? an.areas.get(c) : 0) / 10) / V; seq.push([c, t, du]); t += du;
     });
     prev = L;
   }
@@ -869,14 +878,14 @@ class Player {
     this.base = scaled(base, an.W, an.H, L.dw, L.dh);
     this.top = scaled(top, an.W, an.H, L.dw, L.dh);
     // 화소마다 도착 시각(표시 크기, 가까운 화소로)
-    const start = new Map(tl.seq.map(([c, st]) => [c, st]));
+    const start = new Map(tl.seq.map(([c, st, du]) => [c, [st, du / an0.lens.get(c)]]));   // 거리 1px 당 걸리는 시간
     const n = L.dw * L.dh, T = new Float32Array(n).fill(-Infinity);
     const fx = an.W / L.dw, fy = an.H / L.dh;
     for (let y = 0; y < L.dh; y++) {
       const sy = Math.min(an.H - 1, (y + .5) * fy | 0);
       for (let x = 0; x < L.dw; x++) {
         const si = sy * an.W + Math.min(an.W - 1, (x + .5) * fx | 0), c = an.lab[si];
-        if (c >= 0 && start.has(c)) T[y * L.dw + x] = start.get(c) + an.dist[si] / tl.V;
+        if (c >= 0 && start.has(c)) { const [st, k] = start.get(c); T[y * L.dw + x] = st + an.dist[si] * k; }
       }
     }
     const idx = []; for (let i = 0; i < n; i++) if (T[i] > -Infinity) idx.push(i);

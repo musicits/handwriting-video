@@ -6,7 +6,7 @@ const isTouch = () => matchMedia("(hover:none) and (pointer:coarse)").matches;
 
 const DEF = { paper: "원본", ink: "원본", bg: "단색", bgColor: "#e4e0da", ratio: "9:16", size: 92, speed: "보통", hold: 2.5, soundOn: false, vol: 80, sens: 50, rule: "자동", outside: "빼기", sign: false, signText: "", signPos: "종이 밖 아래" };
 const S = { step: 1, bitmap: null, name: "", corners: null, paper: null, paperKey: "", an: null, surf: null, surfKey: "",
-  bgBitmap: null, fixes: [], sel: -1, sound: null, soundName: "", player: null, blob: null, stop: false, playing: false, busy: false };
+  bgBitmap: null, fixes: [], force: [], sel: -1, sound: null, soundName: "", player: null, blob: null, stop: false, playing: false, busy: false };
 let opt = { ...DEF };
 try { Object.assign(opt, JSON.parse(localStorage.getItem("hwv-opt") || "{}")); } catch (e) {}
 const saveOpt = () => { try { localStorage.setItem("hwv-opt", JSON.stringify(opt)); } catch (e) {} };
@@ -148,8 +148,8 @@ async function analyze() {
   S.busy = true; dock(); busy("사진 펴는 중"); await tick();
   try {
     const key = JSON.stringify(S.corners);
-    if (S.paperKey !== key) { S.paper = HW.warp(S.bitmap, S.corners); S.paperKey = key; S.fixes = []; }
-    S.an = await HW.analyze(S.paper, opt.sens, opt.rule, m => busy(m), opt.outside === "넣기");
+    if (S.paperKey !== key) { S.paper = HW.warp(S.bitmap, S.corners); S.paperKey = key; S.fixes = []; S.force = []; }
+    S.an = await HW.analyze(S.paper, opt.sens, opt.rule, m => busy(m), opt.outside === "넣기", S.force);
     if (S.fixes.length) HW.applyFixes(S.an, S.fixes);
     S.surf = null; S.surfKey = ""; S.sel = -1;
     drawShot(); fixUI();
@@ -175,7 +175,11 @@ function drawShot() {
     const col = c === S.sel ? [123, 92, 240] : lineIdx.get(c) % 2 ? B : A;
     for (let k = 0; k < 3; k++) d[i * 4 + k] = d[i * 4 + k] * (1 - a * .85) + col[k] * a * .85;
   }
-  cv.getContext("2d").putImageData(img, 0, 0);
+  const g0 = cv.getContext("2d"); g0.putImageData(img, 0, 0);
+  g0.save(); g0.strokeStyle = "rgba(123,92,240,.9)"; g0.lineWidth = 2; g0.setLineDash([8, 5]);
+  for (const [x0, y0, x1, y1] of S.force) g0.strokeRect(x0, y0, x1 - x0, y1 - y0);
+  g0.restore();
+  S.shotImg = g0.getImageData(0, 0, cv.width, cv.height);
   if (S.sel >= 0) {                               // 고른 조각은 보라색 + 테두리 상자
     const f = an.info[S.sel], g = cv.getContext("2d");
     g.strokeStyle = "#7B5CF0"; g.lineWidth = 3; g.setLineDash([6, 4]);
@@ -183,10 +187,36 @@ function drawShot() {
   }
 }
 /* 손으로 고치기: 조각을 누르고 → 가야 할 문장의 글씨를 누른다 */
-$("shot").addEventListener("click", e => {
+/* 인식 화면: 한 번 누르기 = 조각을 다른 줄로 옮기기, 끌기 = 그 영역을 직접 잡아 인식 */
+const shotXY = e => { const r = $("shot").getBoundingClientRect(); return [(e.clientX - r.left) / r.width * S.an.W, (e.clientY - r.top) / r.height * S.an.H]; };
+let drag = null;
+$("shot").addEventListener("pointerdown", e => {
   if (!S.an || S.busy) return;
-  const r = $("shot").getBoundingClientRect(), x = (e.clientX - r.left) / r.width * S.an.W, y = (e.clientY - r.top) / r.height * S.an.H;
-  const c = HW.pieceAt(S.an, x, y, 8);
+  drag = { p0: shotXY(e), moved: false, cx: e.clientX, cy: e.clientY };
+  $("shot").setPointerCapture(e.pointerId);
+});
+$("shot").addEventListener("pointermove", e => {
+  if (!drag) return;
+  if (!drag.moved && Math.hypot(e.clientX - drag.cx, e.clientY - drag.cy) > 8) drag.moved = true;
+  if (!drag.moved) return;
+  const [x, y] = shotXY(e), [x0, y0] = drag.p0, g = $("shot").getContext("2d");
+  if (S.shotImg) g.putImageData(S.shotImg, 0, 0);
+  g.save(); g.fillStyle = "rgba(123,92,240,.12)"; g.strokeStyle = "#7B5CF0"; g.lineWidth = 2; g.setLineDash([8, 5]);
+  g.fillRect(Math.min(x0, x), Math.min(y0, y), Math.abs(x - x0), Math.abs(y - y0));
+  g.strokeRect(Math.min(x0, x), Math.min(y0, y), Math.abs(x - x0), Math.abs(y - y0)); g.restore();
+});
+$("shot").addEventListener("pointerup", e => {
+  if (!drag) return;
+  const d = drag; drag = null;
+  const [x, y] = shotXY(e), [x0, y0] = d.p0;
+  if (d.moved) {                                  // 영역 잡기
+    if (Math.abs(x - x0) > 6 && Math.abs(y - y0) > 6) {
+      S.force.push([Math.min(x0, x), Math.min(y0, y), Math.max(x0, x), Math.max(y0, y)]);
+      S.sel = -1; hideStatus(); analyze();
+    } else drawShot();
+    return;
+  }
+  const c = HW.pieceAt(S.an, x, y, 8);          // 조각 옮기기
   if (S.sel < 0) {
     if (c < 0) return;
     S.sel = c; S.selPt = [x, y]; drawShot(); showStatus("옮길 문장의 글씨를 누르세요", 0, false, true);
@@ -199,11 +229,15 @@ $("shot").addEventListener("click", e => {
     S.sel = -1; hideStatus(); drawShot(); fixUI();
   }
 });
+$("shot").addEventListener("pointercancel", () => { drag = null; drawShot(); });
 function fixUI() {
+  $("forceRow").hidden = !S.force.length;
+  $("forceCount").textContent = S.force.length + "곳";
   $("fixRow").hidden = !S.fixes.length;
   $("fixCount").textContent = S.fixes.length + "곳";
   if (S.an) $("lineCount").textContent = S.an.lines + "줄";
 }
+$("forceUndo").onclick = () => { if (!S.force.length) return; S.force.pop(); analyze(); };
 $("fixUndo").onclick = () => {
   if (!S.fixes.length) return;
   S.fixes.pop(); analyze();
@@ -371,7 +405,7 @@ $("save").onclick = async () => {
   download();
 };
 $("back3").onclick = () => { go(3); preview(); };
-$("restart").onclick = () => { S.bitmap = null; S.an = null; S.blob = null; S.fixes = []; $("fileRow").hidden = true; $("pick").hidden = false; $("cornerGrp").hidden = true; go(1); };
+$("restart").onclick = () => { S.bitmap = null; S.an = null; S.blob = null; S.fixes = []; S.force = []; $("fileRow").hidden = true; $("pick").hidden = false; $("cornerGrp").hidden = true; go(1); };
 
 /* ───────── 상태줄 ───────── */
 let stTimer = 0;

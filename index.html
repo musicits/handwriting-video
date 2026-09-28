@@ -219,7 +219,7 @@ input[type=text]{flex:1 1 auto; min-width:0; padding:8px 11px; border:1px solid 
 .hdl{position:absolute; width:34px; height:34px; margin:-17px 0 0 -17px; border-radius:50%; padding:0; cursor:grab;
   border:3px solid #fff; background:color-mix(in srgb,var(--main) 70%,transparent); box-shadow:0 2px 10px rgba(0,0,0,.35); touch-action:none}
 .hdl:active{cursor:grabbing}
-#shot{cursor:pointer}
+#shot{cursor:crosshair; touch-action:none}
 #shot,#view{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px) - 140px); width:auto; height:auto;
   border-radius:10px; box-shadow:0 10px 30px -14px rgba(20,20,40,.45)}
 video#out{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px) - 140px); border-radius:10px; background:#000}
@@ -371,6 +371,7 @@ video#out{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px)
         <div class="row"><span>종이 밖</span><div class="seg" id="outSeg" style="flex:1"><button type="button" data-v="빼기">빼기</button><button type="button" data-v="넣기">넣기</button></div></div>
         <div class="readout"><span>찾은 글줄</span><b class="mono" id="lineCount">—</b></div>
         <div class="readout"><span>공책 줄</span><b id="ruleFound">—</b></div>
+        <div class="row" id="forceRow" hidden><span>직접 잡은 영역 <b class="mono" id="forceCount"></b></span><button class="btn" id="forceUndo" type="button">하나 지우기</button></div>
         <div class="row" id="fixRow" hidden><span>손으로 고침 <b class="mono" id="fixCount"></b></span><button class="btn" id="fixUndo" type="button">하나 되돌리기</button></div>
       </div>
       <div class="grp">
@@ -461,6 +462,7 @@ video#out{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px)
           <p><b>2. 인식</b> — 찾은 글씨가 줄마다 주황·파랑으로 번갈아 칠해집니다. 한 문장이 한 색이면 잘 된 것입니다.</p>
           <ul>
             <li>글씨가 빠지면 <b>글씨 감도</b>를 올리고, 얼룩이 잡히면 내립니다.</li>
+            <li>인식이 안 된 글씨가 있으면 그 부분을 <b>마우스로 끌어 네모를 그리세요</b>. 네모 안은 흐린 획까지 잡습니다. [하나 지우기]로 취소합니다.</li>
             <li>다른 줄 색으로 칠해진 조각이 있으면 <b>그 조각을 누르고</b>(보라색 상자) → <b>원래 문장의 글씨를 누르면</b> 그 줄로 옮겨집니다. [하나 되돌리기]로 취소합니다.</li>
           </ul>
           <p><b>3. 꾸미기</b> — 종이(12가지)·잉크 색·배경·화면 비율·속도·서명·소리를 고릅니다. [미리 재생]으로 확인한 뒤 [영상 만들기].</p>
@@ -492,6 +494,10 @@ video#out{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px)
       <details>
         <summary>종이 밖: 빼기·넣기는 뭔가요?</summary>
         <div class="ans"><p>인스타그램 화면을 캡처하면 종이 위아래에 프로필 이름·좋아요 줄 같은 화면 글씨가 함께 들어옵니다. <b>빼기</b>(기본)는 바탕 밝기가 종이와 다른 줄을 종이 밖으로 보고 영상에서 뺍니다. 그런 줄도 쓰이게 하려면 <b>넣기</b>를 고르세요.</p></div>
+      </details>
+      <details>
+        <summary>인식이 안 된 글씨는 어떻게 하나요?</summary>
+        <div class="ans"><p>인식 화면에서 색이 안 칠해진 글씨 둘레를 <b>마우스로 끌어 네모</b>를 그리세요(휴대폰은 손가락으로 끌기). 네모 안은 기준을 낮춰 흐린 획까지 잉크로 잡고, 흐리거나 종이 밖으로 보여도 빼지 않습니다. 네모를 여러 개 그려도 되고, [하나 지우기]로 마지막 것부터 지웁니다. 한 번 누르기는 조각을 다른 줄로 옮기는 기능입니다.</p></div>
       </details>
       <details>
         <summary>쓰는 순서가 실제와 조금 달라요</summary>
@@ -542,7 +548,7 @@ video#out{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px)
   </div>
 </div>
 
-<script src="lib/mp4-muxer.js?v=20260928e"></script>
-<script src="engine.js?v=20260928e"></script>
-<script src="app.js?v=20260928e"></script>
+<script src="lib/mp4-muxer.js?v=20260928f"></script>
+<script src="engine.js?v=20260928f"></script>
+<script src="app.js?v=20260928f"></script>
 </html>
