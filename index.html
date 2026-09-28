@@ -219,7 +219,20 @@ input[type=text]{flex:1 1 auto; min-width:0; padding:8px 11px; border:1px solid 
 .hdl{position:absolute; width:34px; height:34px; margin:-17px 0 0 -17px; border-radius:50%; padding:0; cursor:grab;
   border:3px solid #fff; background:color-mix(in srgb,var(--main) 70%,transparent); box-shadow:0 2px 10px rgba(0,0,0,.35); touch-action:none}
 .hdl:active{cursor:grabbing}
-#shot{cursor:crosshair; touch-action:none}
+#shot.move{cursor:pointer; touch-action:none}
+#shot.add{cursor:crosshair; touch-action:none}
+/* 고치기 안내: 도구를 고르면 순서를 보여 주고, 지금 할 차례를 진하게 */
+.guide{margin:12px 0 0; padding:0; list-style:none; display:grid; gap:6px; counter-reset:g}
+.guide li{display:flex; gap:9px; align-items:flex-start; padding:8px 10px; border-radius:10px; font-size:13px; line-height:1.5;
+  color:var(--steel); background:color-mix(in srgb,var(--canvas) 55%,transparent); border:1px solid var(--glass-hairline); word-break:keep-all}
+.guide li::before{counter-increment:g; content:counter(g); flex:0 0 20px; height:20px; border-radius:50%; display:grid; place-items:center;
+  font-size:11.5px; font-weight:700; border:1px solid var(--line-strong); color:var(--steel)}
+.guide li.now{color:var(--ink); font-weight:600; border-color:color-mix(in srgb,var(--main) 55%,transparent);
+  background:color-mix(in srgb,var(--main) 10%,var(--canvas))}
+.guide li.now::before{background:var(--main); border-color:var(--main); color:#fff}
+.toolhint{position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:4; max-width:calc(100% - 28px);
+  padding:9px 16px; border-radius:999px; font-size:13.5px; font-weight:600; text-align:center; word-break:keep-all; pointer-events:none;
+  color:#fff; background:color-mix(in srgb,var(--main-deep) 88%,transparent); box-shadow:0 8px 20px -10px rgba(40,20,90,.6)}
 #shot,#view{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px) - 140px); width:auto; height:auto;
   border-radius:10px; box-shadow:0 10px 30px -14px rgba(20,20,40,.45)}
 video#out{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px) - 140px); border-radius:10px; background:#000}
@@ -343,6 +356,7 @@ video#out{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px)
     <!-- 4. 저장 -->
     <video id="out" controls playsinline hidden></video>
     <div class="busy" id="busy" hidden></div>
+    <div class="toolhint" id="toolHint" hidden></div>
   </section>
 
   <aside class="rail" id="rail">
@@ -371,8 +385,13 @@ video#out{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px)
         <div class="row"><span>종이 밖</span><div class="seg" id="outSeg" style="flex:1"><button type="button" data-v="빼기">빼기</button><button type="button" data-v="넣기">넣기</button></div></div>
         <div class="readout"><span>찾은 글줄</span><b class="mono" id="lineCount">—</b></div>
         <div class="readout"><span>공책 줄</span><b id="ruleFound">—</b></div>
-        <div class="row" id="forceRow" hidden><span>직접 잡은 영역 <b class="mono" id="forceCount"></b></span><button class="btn" id="forceUndo" type="button">하나 지우기</button></div>
-        <div class="row" id="fixRow" hidden><span>손으로 고침 <b class="mono" id="fixCount"></b></span><button class="btn" id="fixUndo" type="button">하나 되돌리기</button></div>
+      </div>
+      <div class="grp">
+        <h2>고치기</h2>
+        <div class="seg" id="toolSeg"><button type="button" data-v="">끄기</button><button type="button" data-v="move">줄 옮기기</button><button type="button" data-v="add">글씨 추가</button></div>
+        <ol class="guide" id="guide" hidden></ol>
+        <div class="row" id="forceRow" hidden><span>추가한 영역 <b class="mono" id="forceCount"></b></span><button class="btn" id="forceUndo" type="button">하나 지우기</button></div>
+        <div class="row" id="fixRow" hidden><span>옮긴 글씨 <b class="mono" id="fixCount"></b></span><button class="btn" id="fixUndo" type="button">하나 되돌리기</button></div>
       </div>
       <div class="grp">
         <div class="btns"><button class="btn" id="back1" type="button">이전</button><button class="btn primary primary-act" id="go3" type="button">다음</button></div>
@@ -462,8 +481,8 @@ video#out{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px)
           <p><b>2. 인식</b> — 찾은 글씨가 줄마다 주황·파랑으로 번갈아 칠해집니다. 한 문장이 한 색이면 잘 된 것입니다.</p>
           <ul>
             <li>글씨가 빠지면 <b>글씨 감도</b>를 올리고, 얼룩이 잡히면 내립니다.</li>
-            <li>인식이 안 된 글씨가 있으면 그 부분을 <b>마우스로 끌어 네모를 그리세요</b>. 네모 안은 흐린 획까지 잡습니다. [하나 지우기]로 취소합니다.</li>
-            <li>다른 줄 색으로 칠해진 조각이 있으면 <b>그 조각을 누르고</b>(보라색 상자) → <b>원래 문장의 글씨를 누르면</b> 그 줄로 옮겨집니다. [하나 되돌리기]로 취소합니다.</li>
+            <li>인식이 안 된 글씨가 있으면 [고치기 → <b>글씨 추가</b>]를 누르고, 그 글씨를 마우스(폰은 손가락)로 끌어 네모로 감쌉니다.</li>
+            <li>다른 줄 색으로 칠해진 글씨가 있으면 [고치기 → <b>줄 옮기기</b>]를 누르고, ① 그 글씨를 누른 뒤 ② 들어가야 할 줄 근처를 누릅니다.</li>
           </ul>
           <p><b>3. 꾸미기</b> — 종이(12가지)·잉크 색·배경·화면 비율·속도·서명·소리를 고릅니다. [미리 재생]으로 확인한 뒤 [영상 만들기].</p>
           <p><b>4. 저장</b> — 다 만들어지면 MP4 가 바로 내려받아집니다(다운로드 폴더). 다시 받으려면 [MP4 저장].</p>
@@ -497,7 +516,7 @@ video#out{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px)
       </details>
       <details>
         <summary>인식이 안 된 글씨는 어떻게 하나요?</summary>
-        <div class="ans"><p>인식 화면에서 색이 안 칠해진 글씨 둘레를 <b>마우스로 끌어 네모</b>를 그리세요(휴대폰은 손가락으로 끌기). 네모 안은 기준을 낮춰 흐린 획까지 잉크로 잡고, 흐리거나 종이 밖으로 보여도 빼지 않습니다. 네모를 여러 개 그려도 되고, [하나 지우기]로 마지막 것부터 지웁니다. 한 번 누르기는 조각을 다른 줄로 옮기는 기능입니다.</p></div>
+        <div class="ans"><p>[고치기]에서 <b>글씨 추가</b>를 누른 뒤, 색이 안 칠해진 글씨 둘레를 <b>마우스로 끌어 네모</b>로 감싸세요(휴대폰은 손가락으로 끌기). 네모 안은 기준을 낮춰 흐린 획까지 잉크로 잡고, 흐리거나 종이 밖으로 보여도 빼지 않습니다. 네모를 여러 개 그려도 되고, [하나 지우기]로 마지막 것부터 지웁니다. 다 고쳤으면 [끄기]를 누르세요.</p></div>
       </details>
       <details>
         <summary>쓰는 순서가 실제와 조금 달라요</summary>
@@ -548,7 +567,7 @@ video#out{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px)
   </div>
 </div>
 
-<script src="lib/mp4-muxer.js?v=20260928f"></script>
-<script src="engine.js?v=20260928f"></script>
-<script src="app.js?v=20260928f"></script>
+<script src="lib/mp4-muxer.js?v=20260928h"></script>
+<script src="engine.js?v=20260928h"></script>
+<script src="app.js?v=20260928h"></script>
 </html>

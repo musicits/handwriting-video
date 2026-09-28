@@ -6,7 +6,7 @@ const isTouch = () => matchMedia("(hover:none) and (pointer:coarse)").matches;
 
 const DEF = { paper: "원본", ink: "원본", bg: "단색", bgColor: "#e4e0da", ratio: "9:16", size: 92, speed: "보통", hold: 2.5, soundOn: false, vol: 80, sens: 50, rule: "자동", outside: "빼기", sign: false, signText: "", signPos: "종이 밖 아래" };
 const S = { step: 1, bitmap: null, name: "", corners: null, paper: null, paperKey: "", an: null, surf: null, surfKey: "",
-  bgBitmap: null, fixes: [], force: [], sel: -1, sound: null, soundName: "", player: null, blob: null, stop: false, playing: false, busy: false };
+  bgBitmap: null, fixes: [], force: [], sel: -1, tool: "", toast: "", sound: null, soundName: "", player: null, blob: null, stop: false, playing: false, busy: false };
 let opt = { ...DEF };
 try { Object.assign(opt, JSON.parse(localStorage.getItem("hwv-opt") || "{}")); } catch (e) {}
 const saveOpt = () => { try { localStorage.setItem("hwv-opt", JSON.stringify(opt)); } catch (e) {} };
@@ -23,7 +23,7 @@ addEventListener("resize", setTops);
 /* ───────── 단계 ───────── */
 function go(n) {
   stopPlay();
-  if (S.sel >= 0) { S.sel = -1; hideStatus(); }
+  if (S.tool) setTool("");
   S.step = n;
   document.querySelectorAll("[data-step]").forEach(el => el.hidden = +el.dataset.step !== n);
   paintSteps();
@@ -152,7 +152,7 @@ async function analyze() {
     S.an = await HW.analyze(S.paper, opt.sens, opt.rule, m => busy(m), opt.outside === "넣기", S.force);
     if (S.fixes.length) HW.applyFixes(S.an, S.fixes);
     S.surf = null; S.surfKey = ""; S.sel = -1;
-    drawShot(); fixUI();
+    drawShot(); fixUI(); guide();
     $("lineCount").textContent = S.an.lines + "줄";
     $("ruleFound").textContent = S.an.ruled ? "있음" : "없음";
     busy("");
@@ -172,7 +172,7 @@ function drawShot() {
   for (let i = 0; i < an.W * an.H; i++) {
     const c = an.lab[i]; if (c < 0 || !lineIdx.has(c)) continue;
     const a = Math.min(1, an.inkA[i] * 1.6); if (a < .08) continue;      // 넓힌 테두리가 아니라 실제 잉크만 칠한다
-    const col = c === S.sel ? [123, 92, 240] : lineIdx.get(c) % 2 ? B : A;
+    const col = c === S.sel ? [222, 40, 140] : lineIdx.get(c) % 2 ? B : A;
     for (let k = 0; k < 3; k++) d[i * 4 + k] = d[i * 4 + k] * (1 - a * .85) + col[k] * a * .85;
   }
   const g0 = cv.getContext("2d"); g0.putImageData(img, 0, 0);
@@ -182,54 +182,92 @@ function drawShot() {
   S.shotImg = g0.getImageData(0, 0, cv.width, cv.height);
   if (S.sel >= 0) {                               // 고른 조각은 보라색 + 테두리 상자
     const f = an.info[S.sel], g = cv.getContext("2d");
-    g.strokeStyle = "#7B5CF0"; g.lineWidth = 3; g.setLineDash([6, 4]);
-    g.strokeRect(f.x0 - 6, f.y0 - 6, f.x1 - f.x0 + 12, f.y1 - f.y0 + 12);
+    g.strokeStyle = "#DE288C"; g.lineWidth = 4; g.setLineDash([]);
+    g.strokeRect(f.x0 - 9, f.y0 - 9, f.x1 - f.x0 + 18, f.y1 - f.y0 + 18);
   }
 }
 /* 손으로 고치기: 조각을 누르고 → 가야 할 문장의 글씨를 누른다 */
-/* 인식 화면: 한 번 누르기 = 조각을 다른 줄로 옮기기, 끌기 = 그 영역을 직접 잡아 인식 */
+/* 고치기 도구: 줄 옮기기(누르고 → 들어갈 줄 누르기) · 글씨 추가(끌어서 네모). 고른 도구만 동작하고 순서를 보여 준다 */
+const GUIDE = {
+  move: ["잘못된 색으로 칠해진 글씨를 누르세요 — 분홍색으로 바뀝니다", "그 글씨가 들어갈 줄의 높이 아무 데나 누르세요 — 빈 곳도 됩니다"],
+  add: ["인식 안 된 글씨를 끌어서 네모로 감싸세요", "손을 떼면 그 안을 다시 인식합니다"],
+};
+function setTool(t) {
+  S.tool = t; S.sel = -1; S.toast = "";
+  $("shot").classList.toggle("move", t === "move"); $("shot").classList.toggle("add", t === "add");
+  $("toolSeg")._paint(); guide(); if (S.an) drawShot();
+}
+function guide() {
+  const g = GUIDE[S.tool], box = $("guide"), hint = $("toolHint");
+  box.hidden = !g; hint.hidden = !g || S.step !== 2;
+  if (!g) return;
+  const now = S.tool === "move" ? (S.sel >= 0 ? 1 : 0) : 0;
+  box.innerHTML = g.map((t, i) => `<li class="${i === now ? "now" : ""}">${t}</li>`).join("");
+  hint.textContent = S.toast || `${now + 1}. ${g[now].split(" — ")[0]}`;
+}
+function toast(msg) { S.toast = msg; guide(); clearTimeout(toast.t); toast.t = setTimeout(() => { S.toast = ""; guide(); }, 1600); }
+segBind("toolSeg", () => S.tool, v => setTool(v));
+
 const shotXY = e => { const r = $("shot").getBoundingClientRect(); return [(e.clientX - r.left) / r.width * S.an.W, (e.clientY - r.top) / r.height * S.an.H]; };
 let drag = null;
 $("shot").addEventListener("pointerdown", e => {
-  if (!S.an || S.busy) return;
-  drag = { p0: shotXY(e), moved: false, cx: e.clientX, cy: e.clientY };
+  if (!S.an || S.busy || !S.tool) return;
+  e.preventDefault();
+  drag = { p0: shotXY(e) };
   $("shot").setPointerCapture(e.pointerId);
 });
 $("shot").addEventListener("pointermove", e => {
-  if (!drag) return;
-  if (!drag.moved && Math.hypot(e.clientX - drag.cx, e.clientY - drag.cy) > 8) drag.moved = true;
-  if (!drag.moved) return;
+  if (!drag || S.tool !== "add") return;
   const [x, y] = shotXY(e), [x0, y0] = drag.p0, g = $("shot").getContext("2d");
   if (S.shotImg) g.putImageData(S.shotImg, 0, 0);
-  g.save(); g.fillStyle = "rgba(123,92,240,.12)"; g.strokeStyle = "#7B5CF0"; g.lineWidth = 2; g.setLineDash([8, 5]);
+  g.save(); g.fillStyle = "rgba(123,92,240,.14)"; g.strokeStyle = "#7B5CF0"; g.lineWidth = 3; g.setLineDash([10, 6]);
   g.fillRect(Math.min(x0, x), Math.min(y0, y), Math.abs(x - x0), Math.abs(y - y0));
   g.strokeRect(Math.min(x0, x), Math.min(y0, y), Math.abs(x - x0), Math.abs(y - y0)); g.restore();
 });
-$("shot").addEventListener("pointerup", e => {
+$("shot").addEventListener("pointerup", async e => {
   if (!drag) return;
-  const d = drag; drag = null;
-  const [x, y] = shotXY(e), [x0, y0] = d.p0;
-  if (d.moved) {                                  // 영역 잡기
+  const [x, y] = shotXY(e), [x0, y0] = drag.p0; drag = null;
+  if (S.tool === "add") {
     if (Math.abs(x - x0) > 6 && Math.abs(y - y0) > 6) {
       S.force.push([Math.min(x0, x), Math.min(y0, y), Math.max(x0, x), Math.max(y0, y)]);
-      S.sel = -1; hideStatus(); analyze();
-    } else drawShot();
+      await analyze(); toast("추가했습니다 — 더 있으면 또 감싸세요");
+    } else { drawShot(); toast("누르지 말고 끌어서 네모로 감싸세요"); }
     return;
   }
-  const c = HW.pieceAt(S.an, x, y, 8);          // 조각 옮기기
+  // 줄 옮기기
   if (S.sel < 0) {
-    if (c < 0) return;
-    S.sel = c; S.selPt = [x, y]; drawShot(); showStatus("옮길 문장의 글씨를 누르세요", 0, false, true);
+    const c = HW.pieceAt(S.an, x, y, 10);
+    if (c < 0) { toast("글씨 위를 눌러 주세요"); return; }
+    S.sel = c; S.selPt = [x, y]; drawShot(); guide();
   } else {
-    if (c >= 0 && c !== S.sel) {
-      S.fixes.push({ a: S.selPt, b: [x, y] });
-      HW.applyFixes(S.an, [{ a: S.selPt, b: [x, y] }]);
-      S.surf = null; S.surfKey = "";
-    }
-    S.sel = -1; hideStatus(); drawShot(); fixUI();
+    const c = nearestLinePiece(y);                 // 들어갈 줄: 가로 위치는 상관없이 높이로 고른다
+    if (c >= 0 && S.an.lineOf.get(c) !== S.an.lineOf.get(S.sel)) {
+      const [bx, by] = pieceCenter(c);
+      S.fixes.push({ a: S.selPt, b: [bx, by] });
+      HW.applyFixes(S.an, [{ a: S.selPt, b: [bx, by] }]);
+      S.surf = null; S.surfKey = ""; S.sel = -1; drawShot(); fixUI(); toast("옮겼습니다");
+    } else { S.sel = -1; drawShot(); toast("이미 그 줄에 있습니다 — 처음부터 다시 누르세요"); }
   }
 });
-$("shot").addEventListener("pointercancel", () => { drag = null; drawShot(); });
+/* 누른 높이에서 가장 가까운 글줄의 대표 조각(그 줄에서 가장 큰 조각) */
+function nearestLinePiece(y) {
+  const an = S.an, byL = new Map();
+  for (const id of an.keep) {
+    const L = an.lineOf.get(id), f = an.info[id]; if (!byL.has(L)) byL.set(L, { s: 0, n: 0, big: id });
+    const o = byL.get(L); o.s += f.cy * f.n; o.n += f.n; if (f.n > an.info[o.big].n) o.big = id;
+  }
+  let best = -1, bd = Infinity;
+  for (const o of byL.values()) { const d = Math.abs(o.s / o.n - y); if (d < bd) { bd = d; best = o.big; } }
+  return best;
+}
+function pieceCenter(id) {                        // 조각 안의 실제 화소 하나(좌표로 기록하려고)
+  const an = S.an, f = an.info[id], cx = Math.round((f.x0 + f.x1) / 2), cy = Math.round(f.cy);
+  for (let d = 0; d < 60; d++) for (const [dx, dy] of [[d, 0], [-d, 0], [0, d], [0, -d]]) {
+    const x = cx + dx, y = cy + dy; if (x >= 0 && y >= 0 && x < an.W && y < an.H && an.lab[y * an.W + x] === id) return [x, y];
+  }
+  return [cx, cy];
+}
+$("shot").addEventListener("pointercancel", () => { drag = null; if (S.an) drawShot(); });
 function fixUI() {
   $("forceRow").hidden = !S.force.length;
   $("forceCount").textContent = S.force.length + "곳";
