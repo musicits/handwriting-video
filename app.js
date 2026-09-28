@@ -4,16 +4,21 @@ const $ = id => document.getElementById(id);
 const tick = () => new Promise(r => setTimeout(r, 30));
 const isTouch = () => matchMedia("(hover:none) and (pointer:coarse)").matches;
 
-const DEF = { paper: "원본", ink: "원본", bg: "단색", bgColor: "#e4e0da", ratio: "9:16", size: 92, speed: "보통", hold: 2.5, soundOn: false, vol: 80, sens: 50, rule: "자동", outside: "빼기", sign: true, signText: "poeticinsik", signPos: "오른쪽 아래" };
+const DEF = { paper: "원본", ink: "원본", bg: "단색", bgColor: "#e4e0da", ratio: "9:16", size: 92, speed: "보통", hold: 2.5, soundOn: false, vol: 80, sens: 50, rule: "자동", outside: "빼기", sign: false, signText: "", signPos: "종이 밖 아래" };
 const S = { step: 1, bitmap: null, name: "", corners: null, paper: null, paperKey: "", an: null, surf: null, surfKey: "",
   bgBitmap: null, fixes: [], sel: -1, sound: null, soundName: "", player: null, blob: null, stop: false, playing: false, busy: false };
 let opt = { ...DEF };
 try { Object.assign(opt, JSON.parse(localStorage.getItem("hwv-opt") || "{}")); } catch (e) {}
 const saveOpt = () => { try { localStorage.setItem("hwv-opt", JSON.stringify(opt)); } catch (e) {} };
 
-/* 머리말 높이 */
-new ResizeObserver(() => document.documentElement.style.setProperty("--hh", document.querySelector("header").offsetHeight + "px"))
-  .observe(document.querySelector("header"));
+/* 머리말 높이, 작업 칸이 시작하는 높이 */
+const setTops = () => {
+  document.documentElement.style.setProperty("--hh", document.querySelector("header").offsetHeight + "px");
+  document.documentElement.style.setProperty("--wt", Math.round(document.querySelector(".work").getBoundingClientRect().top + scrollY + 14) + "px");
+};
+const ro = new ResizeObserver(setTops);
+ro.observe(document.querySelector("header")); ro.observe($("steps")); ro.observe($("inapp"));
+addEventListener("resize", setTops);
 
 /* ───────── 단계 ───────── */
 function go(n) {
@@ -21,11 +26,7 @@ function go(n) {
   if (S.sel >= 0) { S.sel = -1; hideStatus(); }
   S.step = n;
   document.querySelectorAll("[data-step]").forEach(el => el.hidden = +el.dataset.step !== n);
-  document.querySelectorAll("#steps li").forEach(li => {
-    const k = +li.dataset.s;
-    li.toggleAttribute("aria-current", k === n); if (k === n) li.setAttribute("aria-current", "step");
-    li.classList.toggle("done", k < n);
-  });
+  paintSteps();
   $("drop").hidden = !(n === 1 && !S.bitmap);
   $("photo").hidden = !(n === 1 && S.bitmap);
   $("shot").hidden = n !== 2;
@@ -34,6 +35,25 @@ function go(n) {
   if (n !== 4) $("out").pause();
   dock();
   window.scrollTo(0, 0);
+}
+/* 단계 표시: 갈 수 있는 단계는 눌러서 바로 돌아간다(완성 뒤 인식으로 가서 고치기 등) */
+const STEP_NAMES = ["사진", "인식", "꾸미기", "저장"];
+const canGo = k => k === 1 || (k === 2 && S.bitmap) || (k === 3 && S.an) || (k === 4 && S.blob);
+function paintSteps() {
+  document.querySelectorAll("#steps li").forEach(li => {
+    const k = +li.dataset.s, cur = k === S.step;
+    li.toggleAttribute("aria-current", cur); if (cur) li.setAttribute("aria-current", "step");
+    li.classList.toggle("done", k < S.step);
+    const inner = `<i>${k}</i><span>${STEP_NAMES[k - 1]}</span>`;
+    if (!cur && canGo(k)) { li.innerHTML = `<button type="button">${inner}</button>`; li.firstChild.onclick = () => goStep(k); }
+    else li.innerHTML = inner;
+  });
+}
+function goStep(k) {
+  if (S.busy || !canGo(k)) return;
+  if (k === 2) { go(2); if (!S.an) analyze(); }
+  else if (k === 3) { go(3); buildUI3(); preview(); }
+  else go(k);
 }
 function dock() {
   const b = $("dockBtn");
@@ -219,7 +239,7 @@ function buildUI3() {
   }
   $("bgColorRow").hidden = opt.bg !== "단색"; $("bgImgRow").hidden = opt.bg !== "이미지";
   $("bgColor").value = opt.bgColor;
-  $("signRow").hidden = !opt.sign; $("signPosSeg").hidden = !opt.sign; if (document.activeElement !== $("signText")) $("signText").value = opt.signText;
+  $("signPosSeg").hidden = !(opt.sign && opt.signText.trim()); if (document.activeElement !== $("signText")) $("signText").value = opt.signText;
   $("size").value = opt.size; $("sizeV").textContent = opt.size + "%";
   $("vol").value = opt.vol; $("volV").textContent = opt.vol;
   $("sndSeg").hidden = !S.sound; $("volRow").hidden = !(S.sound && opt.soundOn);
@@ -232,7 +252,7 @@ segBind("speedSeg", () => opt.speed, v => { opt.speed = v; saveOpt(); preview();
 segBind("holdSeg", () => opt.hold, v => { opt.hold = +v; saveOpt(); preview(); });
 segBind("signSeg", () => opt.sign ? "1" : "0", v => { opt.sign = v === "1"; saveOpt(); buildUI3(); preview(); });
 segBind("signPosSeg", () => opt.signPos, v => { opt.signPos = v; saveOpt(); preview(); });
-$("signText").oninput = () => { opt.signText = $("signText").value; saveOpt(); preview(); };
+$("signText").oninput = () => { opt.signText = $("signText").value; opt.sign = !!opt.signText.trim(); $("signSeg")._paint(); $("signPosSeg").hidden = !opt.sign; saveOpt(); preview(); };
 segBind("sndSeg", () => opt.soundOn ? "1" : "0", v => { opt.soundOn = v === "1"; saveOpt(); buildUI3(); });
 $("bgColor").oninput = () => { opt.bgColor = $("bgColor").value; saveOpt(); preview(); };
 $("size").oninput = () => { opt.size = +$("size").value; $("sizeV").textContent = opt.size + "%"; saveOpt(); preview(); };
@@ -318,6 +338,7 @@ $("make").onclick = async () => {
     S.fileName = fileName();
     S.busy = false; go(4);
     if (!isTouch() && !inApp) download();
+    if (audio && HW.encode.noAudio) showStatus("이 브라우저는 소리를 넣지 못해 영상만 저장했습니다 — 크롬에서 다시 만들어 보세요", 0, true);
   } catch (e) {
     S.busy = false; dock();
     if (e.message === "STOP") hideStatus();

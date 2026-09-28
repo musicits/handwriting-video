@@ -890,12 +890,16 @@ class Player {
       const fs = Math.max(18, Math.round(L.dw * .032)), pad = Math.round(L.dw * .06);
       this.g.font = `600 ${fs}px 'Pretendard Variable',Pretendard,'Malgun Gothic',sans-serif`;
       const tw = Math.ceil(this.g.measureText(txt).width), rw = tw + 8, rh = fs + 12;
-      const pos = opt.signPos || "오른쪽 아래";
+      let pos = opt.signPos || "종이 밖 아래";
+      // 종이 안 자리는 글씨 맨 아래보다 밑에만 둔다. 자리가 모자라면 종이 밖으로
+      let inkB = 0; for (let i = 0; i < n; i++) if (T[i] > -Infinity) { const y = (i / L.dw) | 0; if (y > inkB) inkB = y; }
+      const cyIn = L.py + L.dh - Math.round(pad * .5) - rh;
+      if (pos !== "종이 밖 아래" && cyIn < L.py + inkB + Math.round(fs * .4)) pos = "종이 밖 아래";
       let cx, cy;                                  // 캔버스 좌표
-      if (pos === "왼쪽 아래") { cx = L.px + pad - 4; cy = L.py + L.dh - pad - rh; }
-      else if (pos === "가운데 아래") { cx = L.px + (L.dw - rw) / 2; cy = L.py + L.dh - pad - rh; }
+      if (pos === "왼쪽 아래") { cx = L.px + pad - 4; cy = cyIn; }
+      else if (pos === "가운데 아래") { cx = L.px + (L.dw - rw) / 2; cy = cyIn; }
       else if (pos === "종이 밖 아래") { cx = L.px + (L.dw - rw) / 2; cy = Math.min(L.CH - rh - 8, L.py + L.dh + Math.round(fs * 1.2)); }
-      else { cx = L.px + L.dw - pad - rw; cy = L.py + L.dh - pad - rh; }
+      else { cx = L.px + L.dw - pad - rw; cy = cyIn; }
       cx = Math.round(cx); cy = Math.round(cy);
       const inside = pos !== "종이 밖 아래";
       let lum = 0, n = 0;                          // 그 자리 밝기로 글자색을 정한다
@@ -1007,6 +1011,7 @@ async function encode(player, audio, sr, onProgress, stopped) {
   const L = player.L, vc = await pickVideo(L.CW, L.CH);
   if (!vc) throw new Error("NOENC");
   const ac = audio ? await pickAudio(sr) : null;
+  encode.noAudio = !!(audio && !ac);          // 소리를 넣으려 했는데 이 브라우저가 못 넣는 경우
   const muxer = new Mp4Muxer.Muxer({
     target: new Mp4Muxer.ArrayBufferTarget(),
     video: { codec: "avc", width: L.CW, height: L.CH, frameRate: FPS },

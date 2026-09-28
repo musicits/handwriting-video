@@ -124,6 +124,9 @@ header p{margin:0;color:var(--steel);font-size:12.5px}
 .steps i{font-style:normal; width:22px; height:22px; border-radius:50%; display:grid; place-items:center;
   font-size:12px; font-weight:700; border:1px solid var(--line-strong); background:color-mix(in srgb,var(--canvas) 70%,transparent)}
 .steps li[aria-current="step"]{color:var(--ink); font-weight:700}
+.steps button{display:flex; align-items:center; gap:8px; padding:4px 8px 4px 4px; margin:-4px -8px -4px -4px; border:0; border-radius:999px;
+  background:none; color:inherit; font:inherit; cursor:pointer}
+.steps button:hover{background:color-mix(in srgb,var(--main) 10%,transparent); color:var(--main-deep)}
 .steps li[aria-current="step"] i{background:var(--main); color:#fff; border-color:var(--main)}
 .steps li.done i{background:color-mix(in srgb,var(--main) 16%,transparent); border-color:color-mix(in srgb,var(--main) 45%,transparent); color:var(--main-deep)}
 
@@ -254,9 +257,16 @@ video#out{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px)
 .faq .ans ul{margin:2px 0 4px; padding-left:18px}
 .faq .ans b{color:var(--ink)}
 
-.credit{padding:6px 20px 24px;text-align:center;font-size:11.5px;line-height:1.8;color:var(--steel)}
+.credit{padding:14px 20px 6px;text-align:center;font-size:11.5px;line-height:1.8;color:var(--steel)}
 .credit p{margin:0}
 .credit a{color:var(--main-deep);font-weight:600;text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--main) 35%,transparent)}
+
+/* ---- 넓은 화면: 두 칸을 창 높이에 맞추고, 설정판 스크롤이 페이지로 번지지 않게 ---- */
+@media (min-width:901px){
+  .stage{height:calc(100dvh - var(--wt,120px) - 20px); min-height:360px}
+  .rail{position:static; max-height:calc(100dvh - var(--wt,120px) - 20px); overscroll-behavior:contain}
+  #shot,#view,video#out,.photo canvas{max-height:calc(100dvh - var(--wt,120px) - 72px)}
+}
 
 /* ---- 좁은 화면 ---- */
 .dock{display:none}
@@ -270,15 +280,17 @@ video#out{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px)
   .steps li{font-size:12px; gap:5px}
   .steps li + li::before{width:10px}
   .work{grid-template-columns:minmax(0,1fr); gap:12px; padding:10px 12px}
-  .stage{min-height:0; padding:14px 12px}
+  .stage{min-height:0; padding:10px 12px; position:sticky; top:var(--hh,60px); z-index:5}   /* 설정을 굴려도 미리보기는 위에 남는다 */
   .rail{position:static; max-height:none; overflow:visible}
   .grp{padding:14px 16px}
   .btn,.seg button{min-height:44px}
   input[type=text]{font-size:16px; min-height:44px}
-  #shot,#view,video#out{max-height:58dvh}
-  .photo canvas{max-height:58dvh}
+  #shot,#view,video#out{max-height:42dvh}
+  .photo canvas{max-height:42dvh}
+  .drop{aspect-ratio:auto; min-height:180px}
   .rail .primary-act{display:none}
-  .credit{padding:4px 14px calc(88px + env(safe-area-inset-bottom))}
+  .credit{padding:10px 14px 4px}
+  body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
   .dock{display:flex; gap:8px; position:fixed; left:0; right:0; bottom:0; z-index:40;
     padding:10px 12px calc(10px + env(safe-area-inset-bottom));
     background:var(--glass-face); -webkit-backdrop-filter:var(--glass); backdrop-filter:var(--glass);
@@ -394,7 +406,7 @@ video#out{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px)
       <div class="grp">
         <h2>서명</h2>
         <div class="seg" id="signSeg"><button type="button" data-v="0">끄기</button><button type="button" data-v="1">켜기</button></div>
-        <div class="row" id="signRow"><label for="signText">이름</label><input type="text" id="signText" maxlength="40" autocomplete="off" spellcheck="false"></div>
+        <div class="row" id="signRow"><label for="signText">이름</label><input type="text" id="signText" maxlength="40" autocomplete="off" spellcheck="false" placeholder="예: 인스타 아이디"></div>
         <div class="seg" id="signPosSeg" style="margin-top:10px"><button type="button" data-v="왼쪽 아래">왼쪽</button><button type="button" data-v="가운데 아래">가운데</button><button type="button" data-v="오른쪽 아래">오른쪽</button><button type="button" data-v="종이 밖 아래">종이 밖</button></div>
       </div>
       <div class="grp">
@@ -419,13 +431,13 @@ video#out{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px)
         <div class="btns"><button class="btn" id="back3" type="button">꾸미기로</button><button class="btn" id="restart" type="button">새 사진</button></div>
       </div>
     </div>
+    <footer class="credit">
+      <p>Crafted by <a href="https://blog.naver.com/musicits" target="_blank" rel="author noopener">쭈뉘의 뮤직잇츠 music ITs</a></p>
+      <p>© 2026 music ITs. All rights reserved.</p>
+    </footer>
   </aside>
 </main>
 
-<footer class="credit">
-  <p>Crafted by <a href="https://blog.naver.com/musicits" target="_blank" rel="author noopener">쭈뉘의 뮤직잇츠 music ITs</a></p>
-  <p>© 2026 music ITs. All rights reserved.</p>
-</footer>
 
 <div class="dock" id="dock"><button class="btn primary" id="dockBtn" type="button">다음</button></div>
 
@@ -491,7 +503,7 @@ video#out{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px)
       </details>
       <details>
         <summary>서명은 어디에 들어가나요?</summary>
-        <div class="ans"><p>글씨를 다 쓴 뒤 고른 자리(종이 안 왼쪽·가운데·오른쪽 아래, 또는 종이 밖 아래)에 이름이 천천히 나타납니다. 칠판처럼 어두운 종이에서는 밝은 글자로, 밝은 종이에서는 어두운 글자로 바뀝니다. 이름은 [서명] 칸에서 바꾸고, 필요 없으면 끄기를 누르세요.</p></div>
+        <div class="ans"><p>[서명] 칸에 이름이나 인스타 아이디를 쓰면 켜집니다. 글씨를 다 쓴 뒤 고른 자리(종이 안 왼쪽·가운데·오른쪽 아래, 또는 종이 밖 아래)에 이름이 천천히 나타납니다. 종이 안 자리는 글씨와 겹치지 않을 때만 쓰고, 자리가 모자라면 종이 밖 아래로 갑니다. 칠판처럼 어두운 종이에서는 밝은 글자로, 밝은 종이에서는 어두운 글자로 바뀝니다. 칸을 비우거나 [끄기]를 누르면 빠집니다. 쓴 서명은 이 브라우저에 기억됩니다.</p></div>
       </details>
       <details>
         <summary>글 쓰는 소리는 어떻게 넣나요?</summary>
