@@ -52,7 +52,7 @@ stage.addEventListener("dragover", e => { if (S.step !== 1) return; e.preventDef
 stage.addEventListener("dragleave", () => stage.classList.remove("drag"));
 stage.addEventListener("drop", e => {
   if (S.step !== 1) return; e.preventDefault(); stage.classList.remove("drag");
-  const f = [...e.dataTransfer.files].find(f => f.type.startsWith("image/")); if (f) loadPhoto(f);
+  const f = [...e.dataTransfer.files].find(f => f.type.startsWith("image/") || isHeic(f)); if (f) loadPhoto(f);
 });
 document.addEventListener("paste", e => {
   if (S.step !== 1) return;
@@ -60,8 +60,23 @@ document.addEventListener("paste", e => {
   if (it) loadPhoto(it.getAsFile());
 });
 
+/* 아이폰 HEIC: 엣지·크롬이 못 읽어서, 넣을 때만 변환 프로그램을 받아 JPG 로 바꾼다 */
+async function heicToJpeg(file) {
+  if (!window.heic2any) await new Promise((ok, no) => {
+    const sc = document.createElement("script"); sc.src = "https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js";
+    sc.onload = ok; sc.onerror = () => no(new Error("변환 프로그램을 받지 못했습니다")); document.head.appendChild(sc);
+  });
+  const out = await window.heic2any({ blob: file, toType: "image/jpeg", quality: .92 });
+  return Array.isArray(out) ? out[0] : out;
+}
+const isHeic = f => /\.(heic|heif)$/i.test(f.name || "") || /heic|heif/i.test(f.type || "");
 async function loadPhoto(file) {
   let bm;
+  if (isHeic(file)) {
+    showStatus("아이폰 사진 바꾸는 중", 0, false, true);
+    try { const name = file.name; file = await heicToJpeg(file); file.name = name; hideStatus(); }
+    catch (e) { showStatus("HEIC 사진을 열지 못했습니다 — JPG 로 바꿔 올려 주세요", 0, true); return; }
+  }
   try { bm = await createImageBitmap(file, { imageOrientation: "from-image" }); }
   catch (e) {
     try { bm = await createImageBitmap(file); } catch (e2) { showStatus("이 사진은 열 수 없습니다 (HEIC 는 JPG 로)", 0, true); return; }
@@ -302,7 +317,7 @@ $("make").onclick = async () => {
     $("outSize").textContent = (S.blob.size / 1048576).toFixed(1) + " MB";
     S.fileName = fileName();
     S.busy = false; go(4);
-    if (!isTouch()) download();
+    if (!isTouch() && !inApp) download();
   } catch (e) {
     S.busy = false; dock();
     if (e.message === "STOP") hideStatus();
@@ -320,6 +335,7 @@ function download() {
 }
 $("save").onclick = async () => {
   if (!S.blob) return;
+  if (inApp && !isTouch()) { $("inapp").scrollIntoView({ block: "center" }); showStatus("이 창에서는 저장이 안 됩니다 — 엣지·크롬으로 열어 주세요", 0, true); return; }
   if (isTouch() && navigator.canShare) {
     const f = new File([S.blob], S.fileName, { type: "video/mp4" });
     if (navigator.canShare({ files: [f] })) { try { await navigator.share({ files: [f] }); return; } catch (e) { if (e.name === "AbortError") return; } }
@@ -353,6 +369,18 @@ function idb() {
 async function idbPut(file) { const db = await idb(); return new Promise((ok, no) => { const t = db.transaction("f", "readwrite"); t.objectStore("f").put(file, "sound"); t.oncomplete = ok; t.onerror = no; }); }
 async function idbGet() { const db = await idb(); return new Promise((ok, no) => { const r = db.transaction("f").objectStore("f").get("sound"); r.onsuccess = () => ok(r.result); r.onerror = no; }); }
 (async () => { try { const f = await idbGet(); if (f) await loadSound(f); } catch (e) {} })();
+
+/* 앱 안 브라우저(카카오톡 등): 만든 영상을 내려받지 못한다 */
+const inApp = /KAKAOTALK|NAVER\(inapp|Instagram|FBAN|FBAV|Line\/|DaumApps|everytimeApp|SamsungBrowser\/.*CrossApp|; wv\)/i.test(navigator.userAgent);
+if (inApp) {
+  $("inapp").hidden = false;
+  if (/KAKAOTALK/i.test(navigator.userAgent) && /Android|iPhone|iPad/i.test(navigator.userAgent))   // 휴대폰 카카오톡은 기본 브라우저로 바로 넘긴다
+    location.href = "kakaotalk://web/openExternal?url=" + encodeURIComponent(location.href);
+}
+$("inappCopy").onclick = async () => {
+  try { await navigator.clipboard.writeText(location.href.split("#")[0]); showStatus("주소를 복사했습니다 — 엣지·크롬 주소창에 붙여 넣으세요", 0, true); }
+  catch (e) { prompt("이 주소를 복사해 엣지·크롬에 붙여 넣으세요", location.href.split("#")[0]); }
+};
 
 window.addEventListener("beforeunload", e => { if (S.busy) { e.preventDefault(); e.returnValue = ""; } });
 go(1);

@@ -112,6 +112,12 @@ header p{margin:0;color:var(--steel);font-size:12.5px}
 .helpbtn:hover{background:var(--canvas);color:var(--main-deep)}
 
 /* ---- 단계 표시 ---- */
+.inapp{display:flex; align-items:center; justify-content:space-between; gap:10px 14px; flex-wrap:wrap; margin:12px 20px 0;
+  padding:10px 12px 10px 16px; border-radius:12px; font-size:13px; line-height:1.5;
+  background:color-mix(in srgb,var(--warn) 14%,var(--canvas)); color:color-mix(in srgb,var(--warn) 70%,var(--ink));
+  border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
+.inapp b{font-weight:700}
+@media (max-width:900px){ .inapp{margin:10px 12px 0} }
 .steps{display:flex; gap:6px; padding:14px 20px 0; list-style:none; margin:0; flex-wrap:wrap}
 .steps li{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--steel); font-weight:500}
 .steps li + li::before{content:""; width:22px; height:1px; background:var(--line-strong); margin-right:2px}
@@ -290,6 +296,11 @@ video#out{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px)
   <button class="helpbtn" id="helpBtn" type="button" aria-label="도움말" title="도움말">?</button>
 </header>
 
+<div class="inapp" id="inapp" hidden>
+  <span><b>카카오톡 같은 앱 안에서는 영상 저장이 안 됩니다</b> — 엣지·크롬으로 열어 주세요</span>
+  <button class="btn" id="inappCopy" type="button">주소 복사</button>
+</div>
+
 <ol class="steps" id="steps">
   <li data-s="1"><i>1</i><span>사진</span></li>
   <li data-s="2"><i>2</i><span>인식</span></li>
@@ -303,7 +314,7 @@ video#out{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px)
     <button class="drop" id="drop" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16.5V18a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1.5"/><path d="M12 15V4"/><path d="M7.5 8.5 12 4l4.5 4.5"/></svg>
       <b>손글씨 사진 올리기</b>
-      <small>누르거나 끌어다 놓기 · JPG PNG WEBP</small>
+      <small>누르거나 끌어다 놓기 · JPG PNG WEBP HEIC</small>
     </button>
     <div class="photo" id="photo" hidden>
       <canvas id="photoImg" aria-label="올린 사진"></canvas>
@@ -423,7 +434,7 @@ video#out{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px)
   <button class="btn" id="stop" type="button">멈추기</button>
 </div>
 
-<input type="file" id="fileIn" accept="image/*" hidden>
+<input type="file" id="fileIn" accept="image/*,.heic,.heif" hidden>
 <input type="file" id="bgIn" accept="image/*" hidden>
 <input type="file" id="sndIn" accept="audio/*,video/*,.m4a,.mp3,.wav,.aac,.ogg,.mp4,.mov" hidden>
 
@@ -490,6 +501,10 @@ video#out{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px)
         </div>
       </details>
       <details>
+        <summary>영상은 보이는데 저장이 안 돼요</summary>
+        <div class="ans"><p>카카오톡·네이버·인스타그램 앱 <b>안에서 열린 창</b>은 만든 영상을 내려받지 못해 '지원하지 않는 파일 형식' 같은 문구가 뜹니다. 화면 위 [주소 복사]를 눌러 <b>엣지나 크롬</b>에 붙여 넣어 여세요. PC 카카오톡은 창 위의 [기본 브라우저로 열기]를 눌러도 됩니다. 저장된 파일은 <b>다운로드</b> 폴더에 있습니다.</p></div>
+      </details>
+      <details>
         <summary>어떤 브라우저에서 되나요?</summary>
         <div class="ans"><p>윈도우 <b>엣지</b>·<b>크롬</b> 최신 버전을 권합니다. 설치할 것은 없습니다. 영상 저장에 브라우저의 동영상 인코더(WebCodecs)를 쓰기 때문에 오래된 브라우저에서는 [영상 만들기]가 안 될 수 있습니다.</p></div>
       </details>
@@ -498,8 +513,14 @@ video#out{display:block; max-width:100%; max-height:calc(100dvh - var(--hh,60px)
         <div class="ans"><p>아니요. 인식부터 영상 만들기까지 전부 <b>내 컴퓨터 브라우저 안에서</b> 끝납니다. 사진·소리·영상 모두 서버로 보내지 않습니다.</p></div>
       </details>
       <details>
-        <summary>아이폰 사진(HEIC)이 안 열려요</summary>
-        <div class="ans"><p>크롬·엣지는 HEIC 를 읽지 못합니다. 사진을 JPG 로 바꿔 올리거나, 아이폰 [설정 → 카메라 → 포맷 → 높은 호환성]으로 찍으면 JPG 로 저장됩니다.</p></div>
+        <summary>어떤 파일을 넣고, 무엇이 나오나요?</summary>
+        <div class="ans">
+          <ul>
+            <li><b>사진</b>: JPG · PNG · WEBP · 아이폰 HEIC. HEIC 는 처음 넣을 때 변환 프로그램을 받느라 몇 초 더 걸립니다(인터넷 필요).</li>
+            <li><b>소리</b>: MP3 · M4A · WAV, 또는 동영상 MP4 · MOV(소리만 뽑아 씁니다).</li>
+            <li><b>결과</b>: MP4(영상 H.264 · 소리 AAC). 인스타그램·카카오톡·유튜브에 그대로 올릴 수 있습니다.</li>
+          </ul>
+        </div>
       </details>
       <details>
         <summary>남의 글씨나 시를 써도 되나요?</summary>
