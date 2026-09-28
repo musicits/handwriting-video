@@ -283,10 +283,16 @@ function buildPlayer() {
   if (!S.an) return;
   stopPlay();
   const key = opt.paper + "|" + opt.ink;
-  if (S.surfKey !== key) { S.surf = HW.surfaces(S.an, opt.paper, opt.ink); S.surfKey = key; }
-  S.player = new HW.Player(S.an, opt, $("view"), S.bitmap, S.bgBitmap, S.surf);
-  const p = S.player; p.seek(p.total);
-  $("lenV").textContent = p.total.toFixed(1) + "초";
+  try {
+    if (S.surfKey !== key) { S.surf = HW.surfaces(S.an, opt.paper, opt.ink); S.surfKey = key; }
+    S.player = new HW.Player(S.an, opt, $("view"), S.bitmap, S.bgBitmap, S.surf);
+    const p = S.player; p.seek(p.total);
+    $("lenV").textContent = p.total.toFixed(1) + "초";
+    busy("");
+  } catch (e) {                                   // 하얀 화면으로 두지 않는다
+    console.error(e); S.player = null;
+    busy("미리보기를 그리지 못했습니다 — Ctrl+Shift+R 로 새로고침해 보세요 (" + (e.message || e) + ")");
+  }
 }
 function stopPlay() {
   S.playing = false; $("play").textContent = "미리 재생";
@@ -319,9 +325,10 @@ $("back2").onclick = () => go(2);
 
 /* ───────── 영상 만들기 ───────── */
 $("make").onclick = async () => {
-  if (S.busy || !S.an) return;
+  if (S.busy || !S.an || !S.player) return;
   if (!(await HW.pickVideo(1080, 1080))) { showStatus("이 브라우저는 영상 저장을 못 합니다 — 엣지·크롬 최신판에서 열어 주세요", 0, true); return; }
   stopPlay(); buildPlayer();
+  if (!S.player) return;
   S.busy = true; S.stop = false; dock();
   showStatus("영상 만드는 중 0%", 0);
   try {

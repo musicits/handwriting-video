@@ -892,7 +892,7 @@ class Player {
       const tw = Math.ceil(this.g.measureText(txt).width), rw = tw + 8, rh = fs + 12;
       let pos = opt.signPos || "종이 밖 아래";
       // 종이 안 자리는 글씨 맨 아래보다 밑에만 둔다. 자리가 모자라면 종이 밖으로
-      let inkB = 0; for (let i = 0; i < n; i++) if (T[i] > -Infinity) { const y = (i / L.dw) | 0; if (y > inkB) inkB = y; }
+      let inkB = 0; for (let i = 0; i < L.dw * L.dh; i++) if (T[i] > -Infinity) { const y = (i / L.dw) | 0; if (y > inkB) inkB = y; }
       const cyIn = L.py + L.dh - Math.round(pad * .5) - rh;
       if (pos !== "종이 밖 아래" && cyIn < L.py + inkB + Math.round(fs * .4)) pos = "종이 밖 아래";
       let cx, cy;                                  // 캔버스 좌표
